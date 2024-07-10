@@ -1,20 +1,17 @@
 import pygame as pg
 import glm
-import struct
-import math
 from bindings import *
 
 neighbor_offsets = [(-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1), (0, 0)]
 
 class RigidBody:
     def __init__(self):
-        self.rect = pg.FRect(0, 0, 16, 16)
+        self.rect = pg.FRect(0, 0, 13, 16)
         self.velocity = [0, 0]
         self.collision_types = {'bottom': False, 'top': False, 'right': False, 'left': False}
         self.coyote_time = 0
-        self.coyote_time_wall = 0
         self.elasticity = 0
-        self.friction = [1.0, 0.5]
+        self.friction = 5.1
 
     def get_neighboring_tiles(self, tilemap):
         tiles = []
@@ -52,18 +49,12 @@ class RigidBody:
             if self.velocity[0] > 0:
                 self.rect.right = block.left
                 self.collision_types['left'] = True
-                self.coyote_time_wall = 0
 
             if self.velocity[0] < 0:
                 self.rect.left = block.right
                 self.collision_types['right'] = True
-                self.coyote_time_wall = 0
 
-            if self.friction[1] == 0 or self.friction[1] == 1:
-                self.velocity[1] -= self.velocity[1] * self.friction[1]
-            else:
-                self.velocity[1] += self.velocity[1] * self.friction[1] * dt
-                
+            self.velocity[1] -= self.friction * dt
             self.velocity[0] = -self.velocity[0] * self.elasticity
         
             break
@@ -80,21 +71,18 @@ class RigidBody:
                 self.rect.top = block.bottom
                 self.collision_types['bottom'] = True
                 self.coyote_time = 0
+                do_gravity = 0
 
             if self.velocity[1] > 0:
                 self.rect.bottom = block.top
                 self.collision_types['top'] = True
 
-
-            if self.friction[0] == 0 or self.friction[0] == 1:
-                self.velocity[0] -= self.velocity[0] * self.friction[0]
-            else:
-                self.velocity[0] -= self.velocity[0] * self.friction[0] * dt
-            
-            
+            self.velocity[0] -= self.friction * dt
             self.velocity[1] = -self.velocity[1] * self.elasticity
             break
             
+
+        self.coyote_time += dt
         
         
         
@@ -123,67 +111,44 @@ class Player(RigidBody):
         self.vao.texture_bind(0, "u_texture_0", self.texture)
         
         self.pos = glm.vec3(900, 0, 0)
-        self.rect = pg.FRect(900, 0, 15, 16)
+        self.rect = pg.FRect(902, 0, 13, 16)
         self.roll = 0
         self.scale = glm.vec2(8)
         self.boxcam = glm.vec2(0)
-        self.frame = 0
-        self.time_since_lastframe = 0
 
     def check(self, keys):
-        # self.velocity[0] = 0
-        MAX_SPED = 100
-        ACC_SPED = 200
-        MAX_ACCEL = glm.clamp(ACC_SPED-abs(self.velocity[0]), 0, MAX_SPED)
-        
-        MAX_WINDSPED = 50
-        ACC_WINDSPED = 100
-        MAX_WINDACCEL = glm.clamp(ACC_WINDSPED-abs(self.velocity[0]), 0, MAX_WINDSPED)
+        self.velocity[0] = 0
 
         if keys[bindings['left']] and keys[bindings['right']]:
-            pass
+            self.velocity[0] = 0
 
         elif keys[bindings['right']]:
-            self.velocity[0] += MAX_ACCEL if self.coyote_time < 0.1 else MAX_WINDACCEL
+            self.velocity[0] = 100
 
         elif keys[bindings['left']]:
-            self.velocity[0] -= MAX_ACCEL if self.coyote_time < 0.1 else MAX_WINDACCEL
+            self.velocity[0] = -100
 
         if self.coyote_time < 0.1 and keys[bindings['jump']]:
             self.velocity[1] = 200
             self.coyote_time = 100
             
-        elif self.coyote_time_wall < 0.1 and keys[bindings['jump']]:
-            self.velocity[1] = 100
-            self.velocity[0] = -480 if self.collision_types['left'] else 480
-            self.coyote_time = 100
-            
             
             
     def update(self):
-        self.apply_physics(self.app.share_data['tilemap'].tilemap['0'], self.app.delta_time)
         self.check(pg.key.get_pressed())
-        self.coyote_time += self.app.delta_time
-        self.coyote_time_wall += self.app.delta_time
+        self.apply_physics(self.app.share_data['tilemap'].tilemap['0'], self.app.delta_time)
         
         self.boxcam = glm.clamp(self.boxcam, glm.vec2(-30), glm.vec2(30))
-        self.boxcam += self.pos.xy - glm.vec2(self.rect.x-1, self.rect.y)
+        self.boxcam += self.pos.xy - glm.vec2(self.rect.x-2, self.rect.y)
         
-        self.pos = glm.vec3(self.rect[0]-1, self.rect[1], 0)
+        self.pos = glm.vec3(self.rect[0]-2, self.rect[1], 0)
         
         
         
         self.app.camera.position.xy = self.pos.xy + self.boxcam
         self.m_model = self.get_model_matrix()
         
-        self.time_since_lastframe += self.app.delta_time
-        if self.time_since_lastframe > 0.288:
-            self.frame += 1
-            self.frame = self.frame%4
-            self.time_since_lastframe = 0
-        
         self.vao.uniform_bind("m_model", self.m_model.to_bytes())
-        self.vao.uniform_bind("frame", struct.pack("i", self.frame))
         self.vao.uniform_bind(
             "m_view",
             (self.app.camera.m_proj * self.app.camera.m_view * self.m_model).to_bytes(),
