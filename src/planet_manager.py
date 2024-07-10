@@ -1,13 +1,23 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 from pygame import Vector2, image
 import math
 from copy import deepcopy
 import struct
+import numpy as np
 import webcolors
 
 if TYPE_CHECKING:
     from main import Game
     from src.sun import Sun
+
+
+def hash13(p3:np.array):
+    def fract(x):
+        return x - np.floor(x)
+    p3 = fract(p3 * 0.6031)
+    p3 += np.dot(p3, p3[::-1] + 31.32)
+    return fract((p3[0] + p3[1]) * p3[2])
+
 
 
 # astral bodies
@@ -94,12 +104,36 @@ cee3ef
         # scrolls the planet(texture uv)
         return self.app.elapsed_time * self.time_speed * self.planetRotationSpeed
 
+    def get_campos(self):
+        self.cam_pos = deepcopy(self.app.camera.position.xy)
+        self.cam_pos *= -1  # particles are using this uniform, so they need to move in the exact reverse dir that of the player is moving
+        self.cam_pos /= 10.0
+        return self.cam_pos
+    
+    def get_bg_color_inp(self):
+        return (self.cam_pos.x / 10_000_000, self.cam_pos.y / 10_000_000, self.app.elapsed_time / 150_000)
+    
+    def get_bg_noise_inp(self):
+        return (-self.cam_pos.x / 100, -self.cam_pos.y / 100, 0)#self.app.elapsed_time / 10)
+
     def get_uniforms(self):
         self.time_speed = 1.0
         self.planetRotationSpeed = 0.01
         self.light_speed = 0.5
-
+        
         return {
+            "camPos": {
+                "value" : lambda: struct.pack("ff", *self.get_campos()),
+                "glsl_type":"vec2"
+            },
+            "bgNoiseInput": {
+                "value": lambda: struct.pack("fff", *self.get_bg_noise_inp()),
+                "glsl_type":"vec3",
+            },
+            "bgColorInput": {
+                "value": lambda: struct.pack("fff", *self.get_bg_color_inp()),
+                "glsl_type":"vec3",
+            },
             "time": {
                 "value": lambda: struct.pack("f", self.app.elapsed_time),
                 "glsl_type": "float",
@@ -194,6 +228,18 @@ cee3ef
                 "planetOffset": {  # for rotating planet in X axis
                     "value": lambda: struct.pack("f", self.get_planet_offset()),
                     "glsl_type": "float",
+                },
+                "camPos": {
+                    "value": lambda: struct.pack("ff", *self.get_campos()),
+                    "glsl_type": "vec2"
+                },
+                "bgNoiseInput": {
+                    "value": lambda: struct.pack("fff", *self.get_bg_noise_inp()),
+                    "glsl_type":"vec3",
+                },
+                "bgColorInput": {
+                    "value": lambda: struct.pack("fff", *self.get_bg_color_inp()),
+                    "glsl_type":"vec3",
                 },
             }
             return updated

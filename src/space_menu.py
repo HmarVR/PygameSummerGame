@@ -4,6 +4,7 @@ import sys
 import math
 
 import pygame
+from copy import deepcopy
 
 import zengl
 
@@ -52,19 +53,24 @@ class SpaceMenu:
             fbo=self.app.mesh.vao.Framebuffers.framebuffers["default"],
             program=self.app.mesh.vao.program.programs["ui"],
             vbo=self.app.mesh.vao.vbo.vbos["plane"],
-            umap={"u_plsdriver": "vec3", "screenResolution":"vec2"},  # some drivers want this
-            tmap=["T_ui", "T_stars"],
+            umap={"u_plsdriver": "vec3", "screenResolution":"vec2", "camPos":"vec2"},  # some drivers want this
+            tmap=["T_ui"],
         )
         app.mesh.vao.vaos[self.vao_name] = self.vao
-        self.vao.uniform_bind("screenResolution", struct.pack("ff", *self.app.WIN_SIZE))
+        self.send_uniforms()
         # self.update_surf()
 
-        self.app.mesh.texture.textures['stars'] = self.app.mesh.texture.get_texture_array("assets/textures/stars/")
-        self.tex = self.app.mesh.texture.textures["stars"]
-        self.vao.texture_bind(1, "T_stars", self.tex)
+        # self.app.mesh.texture.textures['stars'] = self.app.mesh.texture.get_texture_array("assets/textures/stars/")
+        # self.tex = self.app.mesh.texture.textures["stars"]
         
         self.init_map()
         self.send_tex()
+
+    def send_uniforms(self):
+        self.vao.uniform_bind("screenResolution", struct.pack("ff", *self.app.WIN_SIZE))
+        cam_pos = deepcopy(self.app.camera.position.xy)
+        cam_pos /= 10.0
+        self.vao.uniform_bind("camPos", struct.pack("ff", *cam_pos))
 
     def send_tex(self):
         try:
@@ -126,7 +132,7 @@ class SpaceMenu:
         screen_area = pygame.Rect(0,0, 100,100)
         screen_area.topleft = [self.app.WIN_SIZE[0] - screen_area.w, self.app.WIN_SIZE[1] - screen_area.h]  # move to bottomleft
         screen_area.move_ip(-10, -10)
-        pygame.draw.rect(self.ui_surf, "darkblue", screen_area)
+        pygame.draw.rect(self.ui_surf, "#0b132d", screen_area)
         
         planet_manager: PlanetManager = self.app.share_data["planet_manager"]
         for body in planet_manager.bodies.values():
@@ -189,6 +195,7 @@ class SpaceMenu:
     @state
     def render(self):
         self.update_surf()
+        self.send_uniforms()
         self.send_tex()
         self.vao.render()
 

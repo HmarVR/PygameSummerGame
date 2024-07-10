@@ -52,8 +52,10 @@ class Sun:
 
     def update_planet_tex(self, planet_name):
         try:
+            print(self.planet_manager.planet_textures)
             texs = self.app.mesh.texture.textures
-            texs["sun"] = self.planet_manager.planet_textures[planet_name]
+            print(planet_name)
+            texs["sun"] = self.planet_manager.planet_textures[planet_name.lower()]
             # self.tex0 = texs["sun"]
             self.vao.texture_bind(0, "T_planet", texs["sun"])
         except:

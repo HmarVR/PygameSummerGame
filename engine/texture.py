@@ -72,6 +72,22 @@ class Textures:
                                 cubemap=False, samples=1)
         #texture.mipmaps(0, 64)
         return Texture(texture, filter, repeat, mipmaps)
+    
+    def get_texture_trans(self, path:str,
+        filter:Tuple[str, str] = ("nearest", "nearest"),
+        repeat:Tuple[str, str] = ("repeat", "repeat"),
+        mipmaps:Tuple[str, str] = (0, 0),
+        max_anisotropy:float=1.0,
+        lod_bias:float=0.0,
+        auto_mipmaps:bool=False
+    ):
+        texture = pg.image.load(path).convert_alpha()
+        texture = pg.transform.flip(texture, flip_x=False, flip_y=True)
+        texture = self.ctx.image(size=texture.get_size(), format="rgba8unorm",
+                                data=pg.image.tostring(texture, 'RGBA'), texture=True,
+                                cubemap=False, samples=1)
+        #texture.mipmaps(0, 64)
+        return Texture(texture, filter, repeat, mipmaps)
         
         
     def from_buffer(self, Image:"zengl.Image",
