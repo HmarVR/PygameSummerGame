@@ -43,7 +43,6 @@ class Textures:
         self.textures["uv"] = self.get_texture("assets/textures/uv.png")
         
         
-        self.textures["albasee"] = self.get_texture_array("assets/textures/tiles/")
         self.textures["player"] = self.get_texture_array("assets/textures/player/")
 
     def from_surface(self, surface: "pg.Surface"):
