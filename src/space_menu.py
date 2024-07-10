@@ -11,6 +11,7 @@ import struct
 
 if TYPE_CHECKING:
     from main import Game
+    from planet_manager import PlanetManager
 
 
 def state(func):
@@ -51,11 +52,18 @@ class SpaceMenu:
             fbo=self.app.mesh.vao.Framebuffers.framebuffers["default"],
             program=self.app.mesh.vao.program.programs["ui"],
             vbo=self.app.mesh.vao.vbo.vbos["plane"],
-            umap={"u_plsdriver": "vec3"},  # some drivers want this
-            tmap=["T_ui"],
+            umap={"u_plsdriver": "vec3", "screenResolution":"vec2"},  # some drivers want this
+            tmap=["T_ui", "T_stars"],
         )
         app.mesh.vao.vaos[self.vao_name] = self.vao
+        self.vao.uniform_bind("screenResolution", struct.pack("ff", *self.app.WIN_SIZE))
         # self.update_surf()
+
+        self.app.mesh.texture.textures['stars'] = self.app.mesh.texture.get_texture_array("assets/textures/stars/")
+        self.tex = self.app.mesh.texture.textures["stars"]
+        self.vao.texture_bind(1, "T_stars", self.tex)
+        
+        self.init_map()
         self.send_tex()
 
     def send_tex(self):
@@ -100,7 +108,44 @@ class SpaceMenu:
         pygame.draw.circle(
             self.ui_surf, "red", pygame.Rect(0, 0, *self.app.WIN_SIZE).center, 1.0
         )
+        
+        self.draw_map()
+    
+    def init_map(self):
+        self.map_area = pygame.Rect(0,0,1,1)
+        planet_manager: PlanetManager = self.app.share_data["planet_manager"]
+        for body in planet_manager.bodies.values():
+            pos: pygame.Vector2 = body["bodyPos"]
+            rad = body["bodyRadius"]
+            rect = pygame.Rect(*pos, rad, rad)
+            self.map_area.union_ip(rect)
+        self.map_area.inflate_ip(1000, 1000)
+        print(self.map_area)
 
+    def draw_map(self):
+        screen_area = pygame.Rect(0,0, 100,100)
+        screen_area.topleft = [self.app.WIN_SIZE[0] - screen_area.w, self.app.WIN_SIZE[1] - screen_area.h]  # move to bottomleft
+        screen_area.move_ip(-10, -10)
+        pygame.draw.rect(self.ui_surf, "darkblue", screen_area)
+        
+        planet_manager: PlanetManager = self.app.share_data["planet_manager"]
+        for body in planet_manager.bodies.values():
+            pos:pygame.Vector2 = body["bodyPos"]
+            normalizedx = pos.x / self.map_area.w  # this doesnt take x into account but whatever
+            normalizedy = pos.y / self.map_area.h
+            normalizedy = 1.0 - normalizedy  # pygame & opengl orientation is diff vertically
+            screen_pos = (screen_area.x + normalizedx * screen_area.w, screen_area.y + normalizedy * screen_area.h)
+            pygame.draw.circle(self.ui_surf, body["uiColor"], screen_pos, 4.0)
+        
+        # draw player
+        pos:pygame.Vector2 = self.app.camera.position.xy
+        normalizedx = pos.x / self.map_area.w  # this doesnt take x into account but whatever
+        normalizedy = pos.y / self.map_area.h
+        normalizedy = 1.0 - normalizedy  # pygame & opengl orientation is diff vertically
+        screen_pos = (screen_area.x + normalizedx * screen_area.w, screen_area.y + normalizedy * screen_area.h)
+        pygame.draw.circle(self.ui_surf, "blue", screen_pos, 4.0)
+        
+    
     def update(self):
         keys = pygame.key.get_pressed()
         self.move(keys)

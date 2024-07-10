@@ -18,24 +18,28 @@ BODIES = {
         "bodyPos": Vector2(16410, 5917),
         "lightDirection": [0.3, 0.6, -1.0],
         "isStar": True,
+        "uiColor":"yellow",
     },
     "Albasee": {
         "bodyRadius": 500 / 4,  # pixels
         "cloudRadius": 530 / 4,
         "bodyPos": Vector2(11_300, 27_450),
         "lightDirection": [0.3, 0.6, -1.0],  # I'll mess with this later
+        "uiColor":"orange",
     },
     "Vulakit": {
         "bodyRadius": 200 / 4,
         "cloudRadius": 250 / 4,
         "bodyPos": Vector2(9_000, 7_750),
         "lightDirection": [0.3, 0.6, -1.0],  # I'll mess with this later
+        "uiColor":"yellow",
     },
     "Platee": {
         "bodyRadius": 330 / 4,
         "cloudRadius": 350 / 4,
         "bodyPos": Vector2(30083, 11523),
         "lightDirection": [0.3, 0.6, -1.0],  # I'll mess with this later
+        "uiColor":"green",
     },
 }
 
@@ -43,6 +47,7 @@ BODIES = {
 class PlanetManager:
     def __init__(self, sun: "Sun", app: "Game") -> None:
         self.app = app
+        self.app.share_data["planet_manager"] = self
         self.sun = sun
         self.bodies = BODIES
         self.latest_planet = list(BODIES.keys())[0]

@@ -118,7 +118,7 @@ class Game:
             self.camera.update()
             self.render()
 
-            self.delta_time = self.clock.tick(999) / 1000
+            self.delta_time = self.clock.tick(60) / 1000
             self.elapsed_time += self.delta_time
             self.fps = 1 / self.delta_time
             

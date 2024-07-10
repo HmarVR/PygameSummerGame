@@ -1,11 +1,17 @@
+from typing import TYPE_CHECKING
 import numpy as np
 import glm
 import struct
 import json
 from engine.vbo import InstancingVBO
 
+
+if TYPE_CHECKING:
+    from main import App
+
+
 class Tilemap:
-    def __init__(self, app, tile_size=16):
+    def __init__(self, app: "App", tile_size=16):
         self.app = app
         self.ctx: mgl.Context = app.ctx
         self.tile_size = tile_size
