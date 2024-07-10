@@ -34,7 +34,7 @@ class SpaceMenu:
         self.app.share_data["space_menu"] = self
 
         self.ui_surf = pygame.surface.Surface(
-            self.app.WIN_SIZE
+            (640, 480)
         ).convert_alpha()  # make rgba8unorm
         self.ui_surf.set_colorkey("black")
 
@@ -73,7 +73,7 @@ class SpaceMenu:
         # self.ui_surf.fill((0,0,0,0))
         self.ui_surf.fill("black")
         h = self.fuelbar.height
-        pos = (10, ((self.app.WIN_SIZE[1] / 2) - (h / 2)))
+        pos = (10, ((480 / 2) - (h / 2)))
         
         fuel_left = self.app.share_data["fuel"] / self.app.share_data["fuel_max"]  # normalized
         fuel_height = fuel_left * self.fuelbar.height
@@ -92,13 +92,13 @@ class SpaceMenu:
         except KeyError:
             surf = pygame.transform.rotate(self.spaceship, self.spaceship_rot)
             self.spaceship_cache[self.spaceship_rot] = surf
-        r = pygame.Rect(0, 0, *self.app.WIN_SIZE)
+        r = pygame.Rect(0, 0, 640, 480)
         r.move_ip(
             -surf.width // 2, -surf.height // 2
         )  # im not refactoring this, dont touch
         self.ui_surf.blit(surf, r.center)
         pygame.draw.circle(
-            self.ui_surf, "red", pygame.Rect(0, 0, *self.app.WIN_SIZE).center, 1.0
+            self.ui_surf, "red", pygame.Rect(0, 0, 640, 480).center, 1.0
         )
 
     def update(self):

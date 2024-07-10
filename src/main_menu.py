@@ -32,7 +32,7 @@ class MainMenu:
         self.app.share_data["main_menu"] = self
 
         self.ui_surf = pygame.surface.Surface(
-            self.app.WIN_SIZE
+            (640, 480)
         ).convert_alpha()  # make rgba8unorm
         self.button_width = 100
         self.button_height = 50
@@ -128,7 +128,7 @@ class MainMenu:
 
         for j, col in enumerate(["darkgreen", "green"]):
             # j will make the sin value exactly 1pi ahead so it will form an infinity symbol
-            start_pos = [(self.app.WIN_SIZE[0] / 2) - (w / 2), ypos]
+            start_pos = [(640 / 2) - (w / 2), ypos]
             for i, l in enumerate(text):
                 surf = self.bigfont.render(l, True, col)
                 start_pos[1] = (
