@@ -37,6 +37,9 @@ class MainMenu:
         self.button_width = 100
         self.button_height = 50
 
+        self.pg_snake = pygame.image.load_sized_svg("assets/textures/pygame-ce.svg", (180, 90)).convert_alpha()
+        pygame.transform.hsl(self.pg_snake, 0, -0.1, -0.2, self.pg_snake)
+
         self.font = pygame.Font("assets/fonts/renogare/Renogare-Regular.otf", 24)
         self.midfont = pygame.Font("assets/fonts/renogare/Renogare-Regular.otf", 28)
         self.bigfont = pygame.Font("assets/fonts/renogare/Renogare-Regular.otf", 36)
@@ -156,6 +159,10 @@ class MainMenu:
             topleft = rect.topleft + (rectsize - size) / 2
             self.ui_surf.blit(surf, topleft)
         self.letter_draw()
+        r = self.pg_snake.get_rect()
+        r.topleft = [self.app.WIN_SIZE[0] - r.width, self.app.WIN_SIZE[1] - r.height]
+        r.move_ip(-6,-6)
+        self.ui_surf.blit(self.pg_snake, r.topleft)
 
     @state
     def render(self):

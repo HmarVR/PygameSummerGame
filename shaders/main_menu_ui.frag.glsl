@@ -31,16 +31,16 @@ vec3 water() {
     uv.xy += vec2((zoom-1.0)/2.0,(zoom-1.0)/2.0);
     
     //Grab the rgb from our uv coord
-    vec3 tex1 = texture(T_ui, uv).bgr;
+    vec3 tex1 = texture(T_ui, uv).rgb;
 
     return tex1 + waterColor * tex1;
 }
 
 void main() {	
     vec4 final;
-    vec4 col = texture(T_ui, uv_0).bgra;
+    vec4 col = texture(T_ui, uv_0).rgba;
 
-    if (col.g > 0.5) {
+    if (col.g > 0.99) {
         final = vec4(water(), 1.0);
     } else {
         final = col;
