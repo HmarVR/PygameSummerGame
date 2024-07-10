@@ -13,7 +13,7 @@ out vec4 fragColor;
 vec3 water() {
     float progress = time; //You can replace iTime with any variable that constantly increases
     float waveSize = 0.010; //How extreme the wavyness is
-    float ripple = 30.0; //How "rippley" it is.
+    float ripple = 25.0; //How "rippley" it is.
     float zoom = (waveSize*3.0) + 1.0; // Zoom correction
 
     vec3 waterColor = vec3(0.0, 0.07, 0.25);
@@ -40,7 +40,7 @@ void main() {
     vec4 final;
     vec4 col = texture(T_ui, uv_0).bgra;
 
-    if (col.g > 0.99) {
+    if (col.g > 0.5) {
         final = vec4(water(), 1.0);
     } else {
         final = col;
