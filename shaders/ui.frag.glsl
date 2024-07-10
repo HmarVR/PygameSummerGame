@@ -39,10 +39,9 @@ vec4 stars() {
         if (0.0 <= difx && difx <= threshold) {
             float dify = fragCoord.y - pos.y;
             if (0.0 <= dify && dify <= threshold) {
-                vec2 relativeCoord = vec2(0.0,0.0);// fragCoord / screenResolution;// (fragCoord - pos) / screenResolution;
+                vec2 relativeCoord = (fragCoord - pos) / vec2(threshold);
                 int star_id = i%4;
-
-                return texture(T_stars, vec3(relativeCoord, 0));
+                return vec4(relativeCoord.x, relativeCoord.y, 0.0, 1.0) + vec4(0.001) * texture(T_stars, vec3(relativeCoord, 0));
                 // return texture(T_stars, vec3(relativeCoord, star_id));
             }
         }
@@ -52,5 +51,5 @@ vec4 stars() {
 }
 
 void main() {	
-    fragColor = texture(T_stars, vec3(0.0,0.0,0)) + stars() + vec4(u_plsdriver, 0.0);
+    fragColor = stars() + vec4(u_plsdriver, 0.0);
 }
