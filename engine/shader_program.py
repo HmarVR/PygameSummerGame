@@ -19,6 +19,7 @@ class ShaderPrograms:
         self.programs['planet'] = self.get_program('planet')
         self.programs['player'] = self.get_program('player')
         self.programs['ui'] = self.get_program('ui')
+        self.programs['main_menu_ui'] = self.get_program('main_menu_ui')
         self.programs['tilemap'] = self.get_program('tilemap') # TODO: make shader
         self.programs['background'] = self.get_program('background') # TODO: make shader
         self.programs['post_process'] = self.get_program('post_process')

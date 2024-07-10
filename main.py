@@ -122,7 +122,8 @@ class Game:
             self.elapsed_time += self.delta_time
             self.fps = 1 / self.delta_time
             
-            print(f"FPS {self.fps} | DT {self.delta_time}")
+            pygame.display.set_caption(f"FPS {self.fps} | DT {self.delta_time}")
+            
 
             # swap buffers
             pygame.display.flip()

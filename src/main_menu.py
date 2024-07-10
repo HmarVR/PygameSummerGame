@@ -6,6 +6,7 @@ import pygame
 
 import zengl
 import math
+import struct
 
 if TYPE_CHECKING:
     from main import Game
@@ -36,8 +37,9 @@ class MainMenu:
         self.button_width = 100
         self.button_height = 50
 
-        self.font = pygame.Font("assets/fonts/renogare/Renogare-Regular.otf", 20)
-        self.bigfont = pygame.Font("assets/fonts/renogare/Renogare-Regular.otf", 32)
+        self.font = pygame.Font("assets/fonts/renogare/Renogare-Regular.otf", 24)
+        self.midfont = pygame.Font("assets/fonts/renogare/Renogare-Regular.otf", 28)
+        self.bigfont = pygame.Font("assets/fonts/renogare/Renogare-Regular.otf", 36)
 
         self.buttons = {"play": {"func": self.play}, "exit": {"func": self.exit}}
         self.selected = list(self.buttons.keys())[0]
@@ -45,14 +47,17 @@ class MainMenu:
 
         self.vao = app.mesh.vao.get_vao(
             fbo=self.app.mesh.vao.Framebuffers.framebuffers["default"],
-            program=self.app.mesh.vao.program.programs["ui"],
+            program=self.app.mesh.vao.program.programs["main_menu_ui"],
             vbo=self.app.mesh.vao.vbo.vbos["plane"],
-            umap={"u_plsdriver": "vec3"},  # some drivers want this
+            umap={"u_plsdriver": "vec3", "time":"float"},  # some drivers want this
             tmap=["T_ui"],
         )
         app.mesh.vao.vaos["main_menu"] = self.vao
         self.update_surf()
         self.send_tex()
+
+    def send_uniforms(self):
+        self.vao.uniform_bind("time", struct.pack("f", self.app.elapsed_time))
 
     def send_tex(self):
         try:
@@ -121,7 +126,7 @@ class MainMenu:
         # I still have to make it so that the letters in the middle move the most(antinode) and the ones on either edge dont move much(node) but too lazy tbh
         #
 
-        for j, col in enumerate(["green", "darkgreen"]):
+        for j, col in enumerate(["darkgreen", "green"]):
             # j will make the sin value exactly 1pi ahead so it will form an infinity symbol
             start_pos = [(self.app.WIN_SIZE[0] / 2) - (w / 2), ypos]
             for i, l in enumerate(text):
@@ -142,10 +147,10 @@ class MainMenu:
         for name, obj in self.buttons.items():
             rect: pygame.Rect = obj["rect"]
             if name == self.selected:
-                pygame.draw.rect(self.ui_surf, "green", rect.inflate(2, 2))
+                pygame.draw.rect(self.ui_surf, "#5bc94b", rect.inflate(4, 4))
             pygame.draw.rect(self.ui_surf, "#1F1F1F", rect)
 
-            surf = self.font.render(name, True, "green")
+            surf = self.font.render(name, True, "#5bc94b")
             size = pygame.Vector2(surf.get_size())
             rectsize = pygame.Vector2(rect.size)
             topleft = rect.topleft + (rectsize - size) / 2
@@ -157,6 +162,7 @@ class MainMenu:
         # im sorry performance
         self.update_surf()
         self.send_tex()
+        self.send_uniforms()
 
         self.vao.render()
         # self.init_uniforms()

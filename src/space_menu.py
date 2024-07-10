@@ -7,6 +7,8 @@ import pygame
 
 import zengl
 
+import struct
+
 if TYPE_CHECKING:
     from main import Game
 
