@@ -17,7 +17,7 @@ uniform sampler2DArray u_texture_0;
 
 
 void main() {
-    vec3 color = texture(u_texture_0, vec3(uv_0.xy, frame)).rgb;
+    vec3 color = texture(u_texture_0, vec3(flip ? (uv_0.xy * vec2(-1, 1)) : (uv_0.xy), frame)).rgb;
 
     if (color == vec3(0, 0, 0)) {
         discard;
@@ -25,12 +25,3 @@ void main() {
 
     fragColor = vec4(color, 1);
 }
-
-
-
-
-
-
-
-
-
