@@ -7,6 +7,9 @@ class RigidBody:
         self.rect = pg.FRect(0, 0, 16, 16)
         self.velocity = [0, 0]
         self.collision_types = {'bottom': False, 'top': False, 'right': False, 'left': False}
+        self.coyote_time = 0
+        self.elasticity = 0
+        self.friction = 0.1
 
     def get_neighboring_tiles(self, tilemap):
         tiles = []
@@ -49,11 +52,12 @@ class RigidBody:
                 self.rect.left = block.right
                 self.collision_types['right'] = True
 
-            self.velocity[0] = 0
+            self.velocity[1] /= self.friction ** dt
+            self.velocity[0] = -self.velocity[0] * self.elasticity
+
+            break
 
         self.rect.y += self.velocity[1] * dt
-
-        del hit_list
 
         hit_list = self.collision_test(self.rect, tilemap)
         
@@ -61,11 +65,14 @@ class RigidBody:
             if self.velocity[1] > 0:
                 self.rect.bottom = block.top
                 self.collision_types['bottom'] = True
+                self.coyote_time = 0
 
             if self.velocity[1] < 0:
                 self.rect.top = block.bottom
                 self.collision_types['top'] = True
 
-            self.velocity[1] = 0
+            self.velocity[0] /= self.friction ** dt
+            self.velocity[1] = -self.velocity[1] * self.elasticity
+            break
 
-        del hit_list
+        self.coyote_time += dt
