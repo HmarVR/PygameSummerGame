@@ -2,13 +2,18 @@ import pygame as pg
 import glm
 import struct
 import math
+from typing import List, Dict, Tuple
 from bindings import *
+
+IDLE_KEYFRAMES = [0.28 for _ in range(4)]
+WALK_KEYFRAMES = [0.12 for _ in range(4)]
+SLIDE_KEYFRAMES = [0.1]
 
 neighbor_offsets = [(-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1), (0, 0)]
 
 class RigidBody:
     def __init__(self):
-        self.rect = pg.FRect(0, 0, 16, 16)
+        self.rect = pg.FRect(0, 0, 15, 15)
         self.velocity = [0, 0]
         self.collision_types = {'bottom': False, 'top': False, 'right': False, 'left': False}
         self.coyote_time = 0
@@ -16,7 +21,7 @@ class RigidBody:
         self.elasticity = 0
         self.friction = [1.0, 0.5]
 
-    def get_neighboring_tiles(self, tilemap):
+    def get_neighboring_tiles(self, tilemap:"Tilemap"):
         tiles = []
         loc = (round(self.rect.x // 16), round(self.rect.y // 16))
 
@@ -32,7 +37,7 @@ class RigidBody:
         
         return tiles
 
-    def collision_test(self, rect, tileset):
+    def collision_test(self, rect, tileset:"Tilemap"):
         hit_list = []
         
         for tile in self.get_neighboring_tiles(tileset):
@@ -41,7 +46,7 @@ class RigidBody:
 
         return hit_list
 
-    def apply_physics(self, tilemap, dt):
+    def apply_physics(self, tilemap:"Tilemap", dt:float):
         self.collision_types = {'bottom': False, 'top': False, 'right': False, 'left': False}
 
         self.rect.x += self.velocity[0] * dt
@@ -105,7 +110,7 @@ class RigidBody:
         
 
 class Player(RigidBody):
-    def __init__(self, app):
+    def __init__(self, app:"Game"):
         super().__init__()
         self.app = app
         
@@ -119,6 +124,7 @@ class Player(RigidBody):
 				"m_model": "mat4",
 				"m_view": "mat4",
 				"frame": "int",
+                "flip": "bool",
 			},
             tmap=["u_texture_0"],
         )
@@ -127,14 +133,18 @@ class Player(RigidBody):
         self.texture = self.app.mesh.texture.textures["player"]
         self.vao.texture_bind(0, "u_texture_0", self.texture)
         
-        self.pos = glm.vec3(900, 0, 0)
-        self.rect = pg.FRect(900, 0, 15, 16)
+        self.pos = glm.vec3(902, 0, 0)
+        self.rect = pg.FRect(902, 0, 14, 15)
         self.roll = 0
-        self.scale = glm.vec2(8)
+        self.scale = glm.vec2(7.5)
         self.boxcam = glm.vec2(0)
-        self.frame = 0
-        self.time_since_lastframe = 0
+        self.idle_animation = Animation(IDLE_KEYFRAMES)
+        self.walk_animation = Animation(WALK_KEYFRAMES)
+        self.slide_animation = Animation(SLIDE_KEYFRAMES)
+        self.animations = [self.idle_animation, self.walk_animation, self.slide_animation]
+        self.animation_manager = AnimationManager(self.animations)
         self.move = 1
+        self.flip = False
 
     def check(self, keys):
         # self.velocity[0] = 0
@@ -151,9 +161,11 @@ class Player(RigidBody):
 
         elif keys[bindings['right']]:
             self.velocity[0] += MAX_ACCEL if self.coyote_time < 0.1 else MAX_WINDACCEL
+            self.flip = False
 
         elif keys[bindings['left']]:
             self.velocity[0] -= MAX_ACCEL if self.coyote_time < 0.1 else MAX_WINDACCEL
+            self.flip = True
 
         if self.coyote_time < 0.1 and keys[bindings['jump']]:
             self.velocity[1] = 200
@@ -165,7 +177,19 @@ class Player(RigidBody):
             self.coyote_time_wall = 100
             self.move = 0
             
+        if self.coyote_time_wall < 0.1:
+            self.animation_manager.set_animation(2)
             
+        elif (keys[bindings['right']] or keys[bindings['left']]) and self.coyote_time < 0.1:
+            self.animation_manager.set_animation(1)
+            
+        elif (keys[bindings['right']] and keys[bindings['left']]) and self.coyote_time < 0.1:
+            self.animation_manager.set_animation(0)
+            
+        else: # my boy prolly just chillin rn am I right (gotta capitalie the I am I right)
+            self.animation_manager.set_animation(0)
+            
+        
             
     def update(self):
         self.apply_physics(self.app.share_data['tilemap'].tilemap['0'], self.app.delta_time)
@@ -183,16 +207,14 @@ class Player(RigidBody):
         self.app.camera.position.xy = self.pos.xy + self.boxcam
         self.m_model = self.get_model_matrix()
         
-        self.time_since_lastframe += self.app.delta_time
-        if self.time_since_lastframe > 0.288:
-            self.frame += 1
-            self.frame = self.frame%4
-            self.time_since_lastframe = 0
-            
+        
+        self.animation_manager.update(self.app.delta_time)
+        self.frame = self.animation_manager.get_frame()
         self.move += self.app.delta_time
         
         self.vao.uniform_bind("m_model", self.m_model.to_bytes())
         self.vao.uniform_bind("frame", struct.pack("i", self.frame))
+        self.vao.uniform_bind("flip", struct.pack("?", self.flip))
         self.vao.uniform_bind(
             "m_view",
             (self.app.camera.m_proj * self.app.camera.m_view * self.m_model).to_bytes(),
@@ -209,4 +231,54 @@ class Player(RigidBody):
         # scale
         m_model = glm.scale(m_model, glm.vec3(self.scale[0], self.scale[1], 1))
         return m_model
+        
+
+class Animation:
+    def __init__(self, Keyframes:List[float]):
+        self.Keyframes = Keyframes
+        self.currentKeyframe = 0
+        self.animationTimeSoFar = 0
+        self.len = len(self.Keyframes)
+        self.__iterCount = 0
+        
+    def __len__(self) -> int:
+        self.len = len(self.Keyframes)
+        return self.len
+        
+    def __iter__(self):
+        return self
+        
+    def __next__(self):
+        if self.__iterCount > self.len:
+            self.__iterCount = 0
+            raise StopIteration
+        self.Keyframes[self.__iterCount]
+        self.__iterCount += 1
     
+    def update(self, dt:float):
+        self.animationTimeSoFar += dt
+        if self.animationTimeSoFar > self.Keyframes[self.currentKeyframe]:
+            self.currentKeyframe = (self.currentKeyframe+1)%len(self.Keyframes)
+            self.animationTimeSoFar = 0
+            
+            
+class AnimationManager:
+    def __init__(self, Animations:List[Animation]):
+        self.Animations = Animations
+        self.currentAnimation = 0
+        
+    
+    def update(self, dt:float):
+        self.Animations[self.currentAnimation].update(dt)
+        
+    def set_animation(self, animation_id:int):
+        if self.currentAnimation != animation_id:
+            self.currentAnimation = animation_id
+            self.Animations[self.currentAnimation].currentKeyframe = 0
+        
+    def get_frame(self) -> int:
+        frame = 0
+        for i, e in enumerate(self.Animations):
+            if i == self.currentAnimation:
+                return frame+self.Animations[self.currentAnimation].currentKeyframe
+            frame += len(e)
