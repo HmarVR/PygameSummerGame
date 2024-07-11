@@ -166,8 +166,8 @@ vec4 stars() {
     starPositions[9] = vec2(0.42, 0.27);
 
     for (int i = 0; i < 10; i++) {
-        starPositions[i] = starPositions[i] * screenResolution;
-    }
+        starPositions[i] = starPositions[i] * vec2(640, 480);
+    }  // ngl I should move this 
 
     float threshold = 3.0;
     vec2 fragCoord = uv_0 * screenResolution;
@@ -177,9 +177,10 @@ vec4 stars() {
         pos += camPos * (2.0 + float(i) * 0.7);
         pos = mod(pos, screenResolution);
         if (abs(distance(pos, fragCoord)) <= threshold) {
-            vec2 relativeCoord = (fragCoord - pos) / vec2(threshold);
+            // vec2 relativeCoord = (fragCoord - pos) / vec2(threshold);
             return vec4(vec3(1.0), 1.0);
         }
+
     }
 
     float h = hash13(bgColorInput);
