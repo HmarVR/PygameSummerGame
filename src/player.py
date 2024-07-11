@@ -21,7 +21,7 @@ class RigidBody:
         self.coyote_time = 0
         self.coyote_time_wall = 0
         self.elasticity = [0.1, 0.15]
-        self.friction = [15.0, 0.95]
+        self.friction = [10.0, 0.95]
 
     def get_neighboring_tiles(self, tilemap:"Tilemap"):
         tiles = []
@@ -158,10 +158,10 @@ class Player(RigidBody):
 
     def check(self, keys):
         # self.velocity[0] = 0
-        MAX_SPED = 900 if self.move > 0.205 else 1
-        ACC_SPED = 700
+        MAX_SPED = 900 if self.move > 0.275 else 1
+        ACC_SPED = 800
         
-        MAX_WINDSPED = 450 if self.move > 0.205 else 1
+        MAX_WINDSPED = 250 if self.move > 0.275 else 1
         ACC_WINDSPED = 100
         
         input_velocity = glm.vec2(0)
@@ -194,9 +194,9 @@ class Player(RigidBody):
                     input_velocity = glm.normalize(input_velocity) * max_addition
             else:
                 max_addition = -MAX_SPEED + glm.length(self.velocity.x)
-                if self.velocity.x >= MAX_SPEED and input_velocity.x < 0 and self.move > 0.205:
+                if self.velocity.x >= MAX_SPEED and input_velocity.x < 0 and self.move > 0.275:
                     input_velocity = glm.normalize(input_velocity) * max_addition
-                elif self.velocity.x <= -MAX_SPEED and input_velocity.x > 0 and self.move > 0.205:
+                elif self.velocity.x <= -MAX_SPEED and input_velocity.x > 0 and self.move > 0.275:
                     input_velocity = glm.normalize(input_velocity) * max_addition
                 else:
                     input_velocity = glm.vec2(0)
