@@ -7,6 +7,7 @@ import webcolors
 
 from typing import TYPE_CHECKING
 from src.planet_manager import PlanetManager
+
 # from vbo import InstancingVBO
 
 if TYPE_CHECKING:
@@ -20,9 +21,9 @@ class Planet:
     ):
         self.app = app
         self.app.share_data["space_planet"] = self
-        
+
         self.app.camera.SPEED = 150
-        
+
         self.ctx: zengl.context = app.ctx
 
         self.time_speed = 1.0
@@ -40,7 +41,7 @@ class Planet:
             umap=self.u_type_mapping,
             tmap=["T_planet", "T_planetNormal", "T_planetUV"],  # texture map
         )
-        app.mesh.vao.vaos['suni'] = self.vao
+        app.mesh.vao.vaos["suni"] = self.vao
         self.update_uniforms(self.uniforms)
 
         self.tex0 = app.mesh.texture.textures["sun"]
@@ -51,11 +52,17 @@ class Planet:
 
         self.tex2 = app.mesh.texture.textures["normal"]
         self.vao.texture_bind(2, "T_planetNormal", self.tex2)
-    
+
+        self.fix_planet_pos()
+
     # normally we calculate planetCenter for space scene but now since its planet pos the planet must be at the center of screen.
-    def fix_planet_pos(self, uniform_map):
-        uniform_map["planetCenter"] = {"value": lambda: struct.pack("ff", *(glm.vec2(320, 240)- self.app.camera.position.xy/500) ), "glsl_type": "vec2"}
-        return uniform_map
+    def fix_planet_pos(self):
+        self.vao.uniform_bind(
+            "planetCenter",
+            struct.pack(
+                "ff", *(glm.vec2(320, 240) - self.app.camera.position.xy / 500)
+            ),
+        )
 
     def update_planet_tex(self, planet_name):
         try:
@@ -81,12 +88,12 @@ class Planet:
             self.vao.uniform_bind(key, func())
 
     def update(self):
-        self.update_uniforms(self.planet_manager.dynamic_uniforms())
+        # self.update_uniforms(self.planet_manager.dynamic_uniforms())
         self.render()
 
     def render(self):
         # self.init_uniforms()
         self.vao.render()
-        
+
     def destroy(self):
-        self.app.mesh.vao.del_vao('suni')
+        self.app.mesh.vao.del_vao("suni")
