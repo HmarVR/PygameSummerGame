@@ -204,9 +204,9 @@ cee3ef
         }
 
     def dynamic_uniforms(self):
-        past = deepcopy(self.latest_planet)
-        self.get_closest_planet()
-        if past != self.latest_planet:
+        # return {}
+        is_new_planet = self.get_closest_planet()
+        if is_new_planet:
             # moved to diff planet
             return self.get_uniforms()
         else:
@@ -296,6 +296,8 @@ cee3ef
 
         if past != self.latest_planet:
             self.sun.update_planet_tex(self.latest_planet)
+            return True
+        return False
 
     def tp_planet(self, id=None):
         if id == None:
