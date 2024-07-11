@@ -20,8 +20,8 @@ class RigidBody:
         self.collision_types = {'bottom': False, 'top': False, 'right': False, 'left': False}
         self.coyote_time = 0
         self.coyote_time_wall = 0
-        self.elasticity = [0.1, 0.1]
-        self.friction = [12.0, 2.75]
+        self.elasticity = [0.0, 0.1]
+        self.friction = [15.0, 0.95]
 
     def get_neighboring_tiles(self, tilemap:"Tilemap"):
         tiles = []
@@ -70,7 +70,10 @@ class RigidBody:
                 if self.move > 0.275:
                     self.coyote_time_wall = 0
 
-            self.velocity[1] *= math.exp(-self.friction[1] * dt)
+            if self.friction[1] == 0 or self.friction[1] == 1:
+                self.velocity[1] -= self.velocity[1] * self.friction[1]
+            else:
+                self.velocity[1] -= self.velocity[1] * self.friction[1] * dt
                 
             self.velocity[0] = -self.velocity[0] * self.elasticity[0]
             self.velocity[0] = 0 if (self.velocity[0]<1.5 and self.velocity[0]>-1.5) else self.velocity[0]
@@ -93,8 +96,11 @@ class RigidBody:
                 self.collision_types['top'] = True
 
 
-            self.velocity[0] *= math.exp(-self.friction[0] * dt)
-        
+            if self.friction[0] == 0 or self.friction[0] == 1:
+                self.velocity[0] -= self.velocity[0] * self.friction[0]
+            else:
+                self.velocity[0] -= self.velocity[0] * self.friction[0] * dt
+            
             
             self.velocity[1] = -self.velocity[1] * self.elasticity[1]
             self.velocity[1] = 0 if (self.velocity[1]<1 and self.velocity[1]>-1) else self.velocity[1]
@@ -149,6 +155,32 @@ class Player(RigidBody):
         self.animation_manager = AnimationManager(self.animations)
         self.move = 1
         self.flip = False
+        
+        self.anim_scale = [1,1]
+        self.since_jump = -1
+        self.since_bounce = -1
+
+    def set_anim_scale(self):
+        if self.since_jump != -1:
+            self.since_jump += self.app.delta_time
+        
+        if self.since_bounce != -1:
+            self.since_bounce += self.app.delta_time
+        self.anim_scale = [1, 1]
+        
+        max_time = 0.4
+        if 0 <= self.since_jump < max_time:
+            # self.since_jump = -1
+            v = max(0, max_time - self.since_jump)
+            self.anim_scale[0] = 1 - (v * 1)
+            self.anim_scale[1] = 1 + (v * 2)
+        
+        max_time = 0.3
+        if 0 <= self.since_bounce < max_time:
+            # self.since_bounce = -1
+            v = max(0, max_time - self.since_bounce)
+            self.anim_scale[0] = 1 + (v * 1.4)
+            self.anim_scale[1] = 1 - (v * 0.9)
 
     def check(self, keys):
         # self.velocity[0] = 0
@@ -187,47 +219,52 @@ class Player(RigidBody):
                 if glm.length(input_velocity.x) > 0:
                     input_velocity = glm.normalize(input_velocity) * max_addition
             else:
-                # Well just allow them to descelerate
                 max_addition = -MAX_SPEED + glm.length(self.velocity.x)
-                if self.velocity.x >= MAX_SPEED and input_velocity.x < 0 and self.move > 0.275:
+                if self.velocity.x >= MAX_SPEED and input_velocity.x < 0 and self.move > 0.205:
                     input_velocity = glm.normalize(input_velocity) * max_addition
-                elif self.velocity.x <= -MAX_SPEED and input_velocity.x > 0 and self.move > 0.275:
+                elif self.velocity.x <= -MAX_SPEED and input_velocity.x > 0 and self.move > 0.205:
                     input_velocity = glm.normalize(input_velocity) * max_addition
                 else:
                     input_velocity = glm.vec2(0)
-                    
-        self.velocity.x += glm.clamp(input_velocity.x, -MAX_SPEED, MAX_SPEED)
+
+        # Update the player's velocity with the scaled input
+        self.velocity += input_velocity
 
         if self.coyote_time < 0.1 and keys[bindings['jump']]:
             self.velocity.y = 200
             self.coyote_time = 100
+            self.since_jump = self.app.delta_time
             
         elif self.coyote_time_wall < 0.1 and pg.key.get_just_pressed()[bindings['jump']]:
-            self.velocity.y = 145
-            self.velocity.x = -160 if self.collision_types['left'] else 160
+            self.velocity.y = 150
+            self.velocity.x = -170 if self.collision_types['left'] else 170
             self.coyote_time_wall = 100
             self.move = 0
+            self.since_bounce = self.app.delta_time  # wall bounce
             
         if self.coyote_time_wall < 0.1:
             self.animation_manager.set_animation(2)
+            
+        elif (keys[bindings['right']] or keys[bindings['left']]) and self.coyote_time < 0.1:
+            self.animation_manager.set_animation(1)
+            
+        elif self.velocity[1] < -40:  # going down
+            self.animation_manager.set_animation(3)
+            
+        elif self.velocity[1] > 40:  # going up(jumping)
+            self.animation_manager.set_animation(4)
             
             
         elif (keys[bindings['right']] and keys[bindings['left']]) and self.coyote_time < 0.1:
             self.animation_manager.set_animation(0)
             
-        elif (keys[bindings['right']] or keys[bindings['left']]) and self.coyote_time < 0.1:
-            self.animation_manager.set_animation(1)
-            
-        elif self.velocity[1] < -40:
-            self.animation_manager.set_animation(3)
-            
-        elif self.velocity[1] > 40:
-            self.animation_manager.set_animation(4)
-            
         else: # my boy prolly just chillin rn am I right (gotta capitalie the I am I right)
             self.animation_manager.set_animation(0)
-            
+
+        if self.coyote_time < 0.1:  # on ground
+            self.since_jump = -1
         
+        self.set_anim_scale()
             
     def update(self):
         self.elasticity[0] = 0.1
@@ -269,7 +306,7 @@ class Player(RigidBody):
         # rotate
         m_model = glm.rotate(m_model, glm.radians(self.roll), glm.vec3(0, 0, 1))
         # scale
-        m_model = glm.scale(m_model, glm.vec3(self.scale[0], self.scale[1], 1))
+        m_model = glm.scale(m_model, glm.vec3(self.scale[0] * self.anim_scale[0], self.scale[1] * self.anim_scale[1], 1))
         return m_model
         
 
