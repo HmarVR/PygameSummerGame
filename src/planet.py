@@ -81,7 +81,6 @@ class Planet:
         }
 
     def update_uniforms(self, uniforms):
-        uniforms = self.fix_planet_pos(uniforms)
         for key, obj in uniforms.items():
             _type = obj["glsl_type"]
             func = obj["value"]
