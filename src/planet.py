@@ -81,13 +81,14 @@ class Planet:
         }
 
     def update_uniforms(self, uniforms):
+        del uniforms["planetCenter"]
         for key, obj in uniforms.items():
             _type = obj["glsl_type"]
             func = obj["value"]
             self.vao.uniform_bind(key, func())
 
     def update(self):
-        # self.update_uniforms(self.planet_manager.dynamic_uniforms())
+        self.update_uniforms(self.planet_manager.dynamic_uniforms())
         self.render()
 
     def render(self):
