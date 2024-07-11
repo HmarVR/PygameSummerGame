@@ -20,7 +20,7 @@ class RigidBody:
         self.collision_types = {'bottom': False, 'top': False, 'right': False, 'left': False}
         self.coyote_time = 0
         self.coyote_time_wall = 0
-        self.elasticity = [0.1, 0.15]
+        self.elasticity = [0.0, 0.1]
         self.friction = [15.0, 0.95]
 
     def get_neighboring_tiles(self, tilemap:"Tilemap"):
@@ -155,6 +155,32 @@ class Player(RigidBody):
         self.animation_manager = AnimationManager(self.animations)
         self.move = 1
         self.flip = False
+        
+        self.anim_scale = [1,1]
+        self.since_jump = -1
+        self.since_bounce = -1
+
+    def set_anim_scale(self):
+        if self.since_jump != -1:
+            self.since_jump += self.app.delta_time
+        
+        if self.since_bounce != -1:
+            self.since_bounce += self.app.delta_time
+        self.anim_scale = [1, 1]
+        
+        max_time = 0.4
+        if 0 <= self.since_jump < max_time:
+            # self.since_jump = -1
+            v = max(0, max_time - self.since_jump)
+            self.anim_scale[0] = 1 - (v * 1)
+            self.anim_scale[1] = 1 + (v * 2)
+        
+        max_time = 0.3
+        if 0 <= self.since_bounce < max_time:
+            # self.since_bounce = -1
+            v = max(0, max_time - self.since_bounce)
+            self.anim_scale[0] = 1 + (v * 1.4)
+            self.anim_scale[1] = 1 - (v * 0.9)
 
     def check(self, keys):
         # self.velocity[0] = 0
@@ -207,12 +233,14 @@ class Player(RigidBody):
         if self.coyote_time < 0.1 and keys[bindings['jump']]:
             self.velocity.y = 200
             self.coyote_time = 100
+            self.since_jump = self.app.delta_time
             
         elif self.coyote_time_wall < 0.1 and pg.key.get_just_pressed()[bindings['jump']]:
             self.velocity.y = 150
             self.velocity.x = -170 if self.collision_types['left'] else 170
             self.coyote_time_wall = 100
             self.move = 0
+            self.since_bounce = self.app.delta_time  # wall bounce
             
         if self.coyote_time_wall < 0.1:
             self.animation_manager.set_animation(2)
@@ -220,10 +248,10 @@ class Player(RigidBody):
         elif (keys[bindings['right']] or keys[bindings['left']]) and self.coyote_time < 0.1:
             self.animation_manager.set_animation(1)
             
-        elif self.velocity[1] < -40:
+        elif self.velocity[1] < -40:  # going down
             self.animation_manager.set_animation(3)
             
-        elif self.velocity[1] > 40:
+        elif self.velocity[1] > 40:  # going up(jumping)
             self.animation_manager.set_animation(4)
             
             
@@ -232,8 +260,11 @@ class Player(RigidBody):
             
         else: # my boy prolly just chillin rn am I right (gotta capitalie the I am I right)
             self.animation_manager.set_animation(0)
-            
+
+        if self.coyote_time < 0.1:  # on ground
+            self.since_jump = -1
         
+        self.set_anim_scale()
             
     def update(self):
         self.elasticity[0] = 0.1
@@ -275,7 +306,7 @@ class Player(RigidBody):
         # rotate
         m_model = glm.rotate(m_model, glm.radians(self.roll), glm.vec3(0, 0, 1))
         # scale
-        m_model = glm.scale(m_model, glm.vec3(self.scale[0], self.scale[1], 1))
+        m_model = glm.scale(m_model, glm.vec3(self.scale[0] * self.anim_scale[0], self.scale[1] * self.anim_scale[1], 1))
         return m_model
         
 
