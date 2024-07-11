@@ -69,6 +69,7 @@ class PlanetManager:
         self.tp_planet()
 
         self.body_rad_mul = 1.0
+        self.cloud_rad_mul = 1.0
 
     def load_planet_textures(self):
         self.planet_textures = {}
@@ -149,7 +150,7 @@ cee3ef
                 "glsl_type": "float",
             },
             "cloudRadius": {
-                "value": lambda: struct.pack("f", self.cloudRadius),
+                "value": lambda: struct.pack("f", self.cloudRadius * self.cloud_rad_mul),
                 "glsl_type": "float",
             },
             "screenResolution": {

@@ -30,6 +30,7 @@ class Planet:
 
         self.planet_manager = PlanetManager(self, self.app)
         self.planet_manager.body_rad_mul = 3.0
+        self.planet_manager.cloud_rad_mul = 3.0
         self.init_uniforms()
 
         self.vao = app.mesh.vao.get_vao(
@@ -50,6 +51,11 @@ class Planet:
 
         self.tex2 = app.mesh.texture.textures["normal"]
         self.vao.texture_bind(2, "T_planetNormal", self.tex2)
+    
+    # normally we calculate planetCenter for space scene but now since its planet pos the planet must be at the center of screen.
+    def fix_planet_pos(self, uniform_map):
+        uniform_map["planetCenter"] = {"value": lambda: struct.pack("ff", *(glm.vec2(320, 240)- self.app.camera.position.xy/500) ), "glsl_type": "vec2"}
+        return uniform_map
 
     def update_planet_tex(self, planet_name):
         try:
@@ -67,7 +73,8 @@ class Planet:
             key: val["glsl_type"] for key, val in self.uniforms.items()
         }
 
-    def update_uniforms(self, uniforms={}):
+    def update_uniforms(self, uniforms):
+        uniforms = self.fix_planet_pos(uniforms)
         for key, obj in uniforms.items():
             _type = obj["glsl_type"]
             func = obj["value"]
