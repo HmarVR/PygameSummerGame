@@ -8,18 +8,20 @@ from bindings import *
 IDLE_KEYFRAMES = [0.28 for _ in range(4)]
 WALK_KEYFRAMES = [0.12 for _ in range(4)]
 SLIDE_KEYFRAMES = [0.1]
+FALL_KEYFRAMES = [0.1]
+JUMP_KEYFRAMES = [0.1]
 
 neighbor_offsets = [(-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1), (0, 0)]
 
 class RigidBody:
     def __init__(self):
         self.rect = pg.FRect(0, 0, 15, 15)
-        self.velocity = [0, 0]
+        self.velocity = glm.vec2(0, 0)
         self.collision_types = {'bottom': False, 'top': False, 'right': False, 'left': False}
         self.coyote_time = 0
         self.coyote_time_wall = 0
-        self.elasticity = 0
-        self.friction = [1.0, 0.5]
+        self.elasticity = [0.1, 0.15]
+        self.friction = [15.0, 0.95]
 
     def get_neighboring_tiles(self, tilemap:"Tilemap"):
         tiles = []
@@ -72,10 +74,9 @@ class RigidBody:
                 self.velocity[1] -= self.velocity[1] * self.friction[1]
             else:
                 self.velocity[1] -= self.velocity[1] * self.friction[1] * dt
-                clamp_gravity *= (1-self.friction[1])
-                do_gravity *= (1-self.friction[1])
                 
-            self.velocity[0] = -self.velocity[0] * self.elasticity
+            self.velocity[0] = -self.velocity[0] * self.elasticity[0]
+            self.velocity[0] = 0 if (self.velocity[0]<1.5 and self.velocity[0]>-1.5) else self.velocity[0]
         
             break
 
@@ -83,7 +84,6 @@ class RigidBody:
         hit_list = self.collision_test(self.rect, tilemap)
         
         self.velocity[1] -= do_gravity * dt
-        self.velocity[1] = max(min(self.velocity[1], clamp_gravity), -clamp_gravity)
         
         for block in hit_list:
             if self.velocity[1] < 0:
@@ -102,9 +102,11 @@ class RigidBody:
                 self.velocity[0] -= self.velocity[0] * self.friction[0] * dt
             
             
-            self.velocity[1] = -self.velocity[1] * self.elasticity
+            self.velocity[1] = -self.velocity[1] * self.elasticity[1]
+            self.velocity[1] = 0 if (self.velocity[1]<1 and self.velocity[1]>-1) else self.velocity[1]
             break
             
+        self.velocity[1] = max(self.velocity[1], -clamp_gravity)
         
         
         
@@ -141,39 +143,74 @@ class Player(RigidBody):
         self.idle_animation = Animation(IDLE_KEYFRAMES)
         self.walk_animation = Animation(WALK_KEYFRAMES)
         self.slide_animation = Animation(SLIDE_KEYFRAMES)
-        self.animations = [self.idle_animation, self.walk_animation, self.slide_animation]
+        self.fall_animation = Animation(FALL_KEYFRAMES)
+        self.jump_animation = Animation(JUMP_KEYFRAMES)
+        self.animations = [
+            self.idle_animation, 
+            self.walk_animation, 
+            self.slide_animation, 
+            self.fall_animation, 
+            self.jump_animation, 
+        ]
         self.animation_manager = AnimationManager(self.animations)
         self.move = 1
         self.flip = False
 
     def check(self, keys):
         # self.velocity[0] = 0
-        MAX_SPED = 100 if self.move > 0.275 else 1
-        ACC_SPED = 200
-        MAX_ACCEL = glm.clamp(ACC_SPED-abs(self.velocity[0]), 0, MAX_SPED)
+        MAX_SPED = 900 if self.move > 0.205 else 1
+        ACC_SPED = 700
         
-        MAX_WINDSPED = 50 if self.move > 0.275 else 1
+        MAX_WINDSPED = 450 if self.move > 0.205 else 1
         ACC_WINDSPED = 100
-        MAX_WINDACCEL = glm.clamp(ACC_WINDSPED-abs(self.velocity[0]), 0, MAX_WINDSPED)
-
+        
+        input_velocity = glm.vec2(0)
+        
         if keys[bindings['left']] and keys[bindings['right']]:
-            pass
+            self.elasticity[0] = 0.0 # yea now pressin both buttons does something
 
         elif keys[bindings['right']]:
-            self.velocity[0] += MAX_ACCEL if self.coyote_time < 0.1 else MAX_WINDACCEL
+            self.elasticity[0] = 0.0
+            input_velocity.x += (ACC_SPED if self.coyote_time < 0.1 else ACC_WINDSPED) * self.app.delta_time
+            # TO NON-CALCULUS PEOPLE: because of chain rule this should be dP/dT
             self.flip = False
 
         elif keys[bindings['left']]:
-            self.velocity[0] -= MAX_ACCEL if self.coyote_time < 0.1 else MAX_WINDACCEL
+            self.elasticity[0] = 0.0
+            input_velocity.x -= (ACC_SPED if self.coyote_time < 0.1 else ACC_WINDSPED) * self.app.delta_time
+            # TO NON-CALCULUS PEOPLE: because of chain rule this should be dP/dT
             self.flip = True
+            
+        
+        # Calculate potential new velocity
+        potential_velocity = self.velocity.x + input_velocity.x
+        MAX_SPEED = MAX_SPED if self.coyote_time < 0.1 else MAX_WINDSPED
+
+        # Cap the input velocity if potential velocity exceeds MAX_SPEED
+        if glm.length(potential_velocity) > MAX_SPEED:
+            if glm.length(self.velocity.x) < MAX_SPEED:
+                max_addition = MAX_SPEED - glm.length(self.velocity[0])
+                if glm.length(input_velocity.x) > 0:
+                    input_velocity = glm.normalize(input_velocity) * max_addition
+            else:
+                max_addition = -MAX_SPEED + glm.length(self.velocity.x)
+                if self.velocity.x >= MAX_SPEED and input_velocity.x < 0 and self.move > 0.205:
+                    input_velocity = glm.normalize(input_velocity) * max_addition
+                elif self.velocity.x <= -MAX_SPEED and input_velocity.x > 0 and self.move > 0.205:
+                    input_velocity = glm.normalize(input_velocity) * max_addition
+                else:
+                    input_velocity = glm.vec2(0)
+
+        # Update the player's velocity with the scaled input
+        self.velocity += input_velocity
 
         if self.coyote_time < 0.1 and keys[bindings['jump']]:
-            self.velocity[1] = 200
+            self.velocity.y = 200
             self.coyote_time = 100
             
         elif self.coyote_time_wall < 0.1 and pg.key.get_just_pressed()[bindings['jump']]:
-            self.velocity[1] = 150
-            self.velocity[0] = -240 if self.collision_types['left'] else 240
+            self.velocity.y = 150
+            self.velocity.x = -170 if self.collision_types['left'] else 170
             self.coyote_time_wall = 100
             self.move = 0
             
@@ -182,6 +219,13 @@ class Player(RigidBody):
             
         elif (keys[bindings['right']] or keys[bindings['left']]) and self.coyote_time < 0.1:
             self.animation_manager.set_animation(1)
+            
+        elif self.velocity[1] < -40:
+            self.animation_manager.set_animation(3)
+            
+        elif self.velocity[1] > 40:
+            self.animation_manager.set_animation(4)
+            
             
         elif (keys[bindings['right']] and keys[bindings['left']]) and self.coyote_time < 0.1:
             self.animation_manager.set_animation(0)
@@ -192,8 +236,10 @@ class Player(RigidBody):
         
             
     def update(self):
+        self.elasticity[0] = 0.1
+        keys = pg.key.get_pressed()
+        self.check(keys)
         self.apply_physics(self.app.share_data['tilemap'].tilemap['0'], self.app.delta_time)
-        self.check(pg.key.get_pressed())
         self.coyote_time += self.app.delta_time
         self.coyote_time_wall += self.app.delta_time
         
