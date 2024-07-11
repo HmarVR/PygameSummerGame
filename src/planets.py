@@ -7,7 +7,7 @@ import webcolors
 
 if TYPE_CHECKING:
     from main import Game
-    from src.loader import Sun
+    from model import Sun
 
 
 # astral bodies

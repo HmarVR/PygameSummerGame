@@ -27,19 +27,6 @@ float size = 25.0;  // controls fbm size + rand function // 40 - 200
 float seed = 3.4;
 int OCTAVES = 2;  // between 2 - 20
 
-
-#ifndef saturate
-#define saturate(v) clamp(v,0.,1.)
-//      clamp(v,0.,1.)
-#endif
-
-//HSV (hue, saturation, value) to RGB.
-//Sources: https://gist.github.com/yiwenl/745bfea7f04c456e0101, https://gist.github.com/sugi-cho/6a01cae436acddd72bdf
-vec3 hsv2rgb(vec3 c){
-	vec4 K=vec4(1.,2./3.,1./3.,3.);
-	return c.z*mix(K.xxx,saturate(abs(fract(c.x+K.xyz)*6.-K.w)-K.x),c.y);
-}
-
 float rand(vec2 coord) {
 	coord = mod(coord, vec2(1.0, 1.0)*round(size));
 	return fract(sin(dot(coord.xy ,vec2(12.9898,78.233))) * 15.5453 * seed);
@@ -70,13 +57,6 @@ float fbm(vec2 coord){
 	}
 	return value;
 }
-
-float hash13(vec3 p3) {
-    p3 = fract(p3 * 0.6031);
-    p3 += dot(p3, p3.zyx + 31.32);
-    return fract((p3.x + p3.y) * p3.z);
-}
-
 /*
 float getZSphere(float rad, float x, float y) { // WHY ARE THESE ***STILL*** HERE
     return sqrt(pow(rad, 2.0) - pow(x, 2.0) - pow(y, 2.0));
@@ -152,50 +132,6 @@ vec2 LightandDither(vec3 normal, vec2 texture_uv) {
     return vec2(ls, dithered_ls);
 }
 
-vec4 stars() {
-    vec2 starPositions[10];
-    starPositions[0] = vec2(0.17, 0.5);
-    starPositions[1] = vec2(0.45, 0.7 );
-    starPositions[2] = vec2(0.1, 0.83 );
-    starPositions[3] = vec2(0.58, 0.3 );
-    starPositions[4] = vec2(0.59, 0.32);
-    starPositions[5] = vec2(0.86, 0.9 );
-    starPositions[6] = vec2(0.38, 0.66);
-    starPositions[7] = vec2(0.19, 0.48);
-    starPositions[8] = vec2(0.79, 0.76);
-    starPositions[9] = vec2(0.42, 0.27);
-
-    for (int i = 0; i < 10; i++) {
-        starPositions[i] = starPositions[i] * vec2(640, 480);
-    }  // ngl I should move this 
-
-    float threshold = 3.0;
-    vec2 fragCoord = uv_0 * screenResolution;
-
-    for (int i = 0; i < 10; i++) {
-        vec2 pos = starPositions[i];
-        pos += camPos * (2.0 + float(i) * 0.7);
-        pos = mod(pos, screenResolution);
-        if (abs(distance(pos, fragCoord)) <= threshold) {
-            // vec2 relativeCoord = (fragCoord - pos) / vec2(threshold);
-            return vec4(vec3(1.0), 1.0);
-        }
-
-    }
-
-    float h = hash13(bgColorInput);
-    float s = 0.5;
-    float v = 0.3;
-
-    vec3 rgb = hsv2rgb(vec3(h,s,v));
-    float mul = noise(uv_0 + bgNoiseInput.xy + bgNoiseInput.z);
-    mul = smoothstep(0.0, 0.6, mul);
-
-    vec3 col = rgb * vec3(mul);
-
-    return vec4(col, 1.0);
-}
-
 vec3 cloudFinal(float ls, vec2 texture_uv) {
     // ld.x = ls
     // ld.y = dithered_ls
@@ -268,13 +204,11 @@ void main() {
             
             final = vec4(planetFinal(ld.y, texture_uv).rgb, 1.0);
         } else {
-            // in cloud rad but no clouds in the pixel
-            final = stars();
+            discard;
         }
         fragColor = final;
     } else {
-        fragColor = stars();  // sets fragColor and discards if necessary
-        // discard;
+        discard;
     }
 	fragColor = clamp(fragColor, vec4(0.0, 0.0, 0.0, 1.0), vec4(1.0));
 }

@@ -1,14 +1,9 @@
-from typing import TYPE_CHECKING
 from src.loader import *
 from engine.fbo import Framebuffers
 import time
 
-
-if TYPE_CHECKING:
-    from main import Game
-
 class SpaceScene:
-    def __init__(self, app: "Game"):
+    def __init__(self, app):
         self.app = app
         self.mesh = app.mesh
         self.ctx:mgl.Context = app.ctx
@@ -19,8 +14,6 @@ class SpaceScene:
         self.fbo = self.mesh.vao.Framebuffers.framebuffers["default"]
         self.blit_img = self.fbo.image_out[0]
         self.pr = ProcessRender(app)
-        
-        self.app.camera.SPEED = 400
         
     def add_opaque_object(self, obj):
         self.opaque_objects.append(obj)

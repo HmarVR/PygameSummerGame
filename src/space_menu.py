@@ -4,7 +4,6 @@ import sys
 import math
 
 import pygame
-from copy import deepcopy
 
 import zengl
 
@@ -12,7 +11,6 @@ import struct
 
 if TYPE_CHECKING:
     from main import Game
-    from planet_manager import PlanetManager
 
 
 def state(func):
@@ -36,7 +34,7 @@ class SpaceMenu:
         self.app.share_data["space_menu"] = self
 
         self.ui_surf = pygame.surface.Surface(
-            self.app.WIN_SIZE
+            (640, 480)
         ).convert_alpha()  # make rgba8unorm
         self.ui_surf.set_colorkey("black")
 
@@ -53,24 +51,12 @@ class SpaceMenu:
             fbo=self.app.mesh.vao.Framebuffers.framebuffers["default"],
             program=self.app.mesh.vao.program.programs["ui"],
             vbo=self.app.mesh.vao.vbo.vbos["plane"],
-            umap={"u_plsdriver": "vec3", "screenResolution":"vec2", "camPos":"vec2"},  # some drivers want this
+            umap={"u_plsdriver": "vec3"},  # some drivers want this
             tmap=["T_ui"],
         )
         app.mesh.vao.vaos[self.vao_name] = self.vao
-        self.send_uniforms()
         # self.update_surf()
-
-        # self.app.mesh.texture.textures['stars'] = self.app.mesh.texture.get_texture_array("assets/textures/stars/")
-        # self.tex = self.app.mesh.texture.textures["stars"]
-        
-        self.init_map()
         self.send_tex()
-
-    def send_uniforms(self):
-        self.vao.uniform_bind("screenResolution", struct.pack("ff", *self.app.WIN_SIZE))
-        cam_pos = deepcopy(self.app.camera.position.xy)
-        cam_pos /= 10.0
-        self.vao.uniform_bind("camPos", struct.pack("ff", *cam_pos))
 
     def send_tex(self):
         try:
@@ -87,7 +73,7 @@ class SpaceMenu:
         # self.ui_surf.fill((0,0,0,0))
         self.ui_surf.fill("black")
         h = self.fuelbar.height
-        pos = (10, ((self.app.WIN_SIZE[1] / 2) - (h / 2)))
+        pos = (10, ((480 / 2) - (h / 2)))
         
         fuel_left = self.app.share_data["fuel"] / self.app.share_data["fuel_max"]  # normalized
         fuel_height = fuel_left * self.fuelbar.height
@@ -106,52 +92,15 @@ class SpaceMenu:
         except KeyError:
             surf = pygame.transform.rotate(self.spaceship, self.spaceship_rot)
             self.spaceship_cache[self.spaceship_rot] = surf
-        r = pygame.Rect(0, 0, *self.app.WIN_SIZE)
+        r = pygame.Rect(0, 0, 640, 480)
         r.move_ip(
             -surf.width // 2, -surf.height // 2
         )  # im not refactoring this, dont touch
         self.ui_surf.blit(surf, r.center)
         pygame.draw.circle(
-            self.ui_surf, "red", pygame.Rect(0, 0, *self.app.WIN_SIZE).center, 1.0
+            self.ui_surf, "red", pygame.Rect(0, 0, 640, 480).center, 1.0
         )
-        
-        self.draw_map()
-    
-    def init_map(self):
-        self.map_area = pygame.Rect(0,0,1,1)
-        planet_manager: PlanetManager = self.app.share_data["planet_manager"]
-        for body in planet_manager.bodies.values():
-            pos: pygame.Vector2 = body["bodyPos"]
-            rad = body["bodyRadius"]
-            rect = pygame.Rect(*pos, rad, rad)
-            self.map_area.union_ip(rect)
-        self.map_area.inflate_ip(1000, 1000)
-        print(self.map_area)
 
-    def draw_map(self):
-        screen_area = pygame.Rect(0,0, 100,100)
-        screen_area.topleft = [self.app.WIN_SIZE[0] - screen_area.w, self.app.WIN_SIZE[1] - screen_area.h]  # move to bottomleft
-        screen_area.move_ip(-10, -10)
-        pygame.draw.rect(self.ui_surf, "#0b132d", screen_area)
-        
-        planet_manager: PlanetManager = self.app.share_data["planet_manager"]
-        for body in planet_manager.bodies.values():
-            pos:pygame.Vector2 = body["bodyPos"]
-            normalizedx = pos.x / self.map_area.w  # this doesnt take x into account but whatever
-            normalizedy = pos.y / self.map_area.h
-            normalizedy = 1.0 - normalizedy  # pygame & opengl orientation is diff vertically
-            screen_pos = (screen_area.x + normalizedx * screen_area.w, screen_area.y + normalizedy * screen_area.h)
-            pygame.draw.circle(self.ui_surf, body["uiColor"], screen_pos, 4.0)
-        
-        # draw player
-        pos:pygame.Vector2 = self.app.camera.position.xy
-        normalizedx = pos.x / self.map_area.w  # this doesnt take x into account but whatever
-        normalizedy = pos.y / self.map_area.h
-        normalizedy = 1.0 - normalizedy  # pygame & opengl orientation is diff vertically
-        screen_pos = (screen_area.x + normalizedx * screen_area.w, screen_area.y + normalizedy * screen_area.h)
-        pygame.draw.circle(self.ui_surf, "blue", screen_pos, 4.0)
-        
-    
     def update(self):
         keys = pygame.key.get_pressed()
         self.move(keys)
@@ -195,7 +144,6 @@ class SpaceMenu:
     @state
     def render(self):
         self.update_surf()
-        self.send_uniforms()
         self.send_tex()
         self.vao.render()
 
