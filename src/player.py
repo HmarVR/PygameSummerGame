@@ -4,6 +4,12 @@ import struct
 import math
 from typing import List, Dict, Tuple
 from bindings import *
+import random
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from main import Game
+
 
 IDLE_KEYFRAMES = [0.28 for _ in range(4)]
 WALK_KEYFRAMES = [0.12 for _ in range(4)]
@@ -135,6 +141,9 @@ class Player(RigidBody):
         super().__init__()
         self.app = app
 
+        self.jump_sound = pg.mixer.Sound("assets/sounds/jump.ogg")
+        self.jump_sound.set_volume(0.5)
+
         self.app.mesh.vao.add_vao(
             vao_name="player",
             fbo=self.app.mesh.vao.Framebuffers.framebuffers["default"],
@@ -177,13 +186,25 @@ class Player(RigidBody):
         self.anim_scale = [1, 1]
         self.since_jump = -1
         self.since_bounce = -1
+        self.dust_clouds = []
+        self.since_dust_cloud = -1
+        self.since_falling = -1
 
     def set_anim_scale(self):
+        dt = self.app.delta_time
         if self.since_jump != -1:
-            self.since_jump += self.app.delta_time
-
+            self.since_jump += dt
         if self.since_bounce != -1:
-            self.since_bounce += self.app.delta_time
+            self.since_bounce += dt
+        if self.since_falling != -1:
+            self.since_falling += dt
+        if self.since_dust_cloud != -1:
+            self.since_dust_cloud += dt
+            if self.since_dust_cloud > 1.0:
+                self.since_dust_cloud = -1
+        else:
+            self.dust_clouds = [[-1000, -1000, 0, 0] for _ in range(4)]
+
         self.anim_scale = [1, 1]
 
         max_time = 0.4
@@ -199,6 +220,15 @@ class Player(RigidBody):
             v = max(0, max_time - self.since_bounce)
             self.anim_scale[0] = 1 + (v * 1.4)
             self.anim_scale[1] = 1 - (v * 0.9)
+
+    def spawn_dust(self):
+        self.since_dust_cloud = 0
+        rad = 10
+        for i in range(4):
+            p = self.pos
+            # dustpos = glm.vec4(p.x + (random.random() - 0.5) * rad, p.y + (random.random() - 0.5) * rad, 0, 0)
+            dustpos = glm.vec4(p.x, p.y, 0, 0)
+            self.dust_clouds[i] = dustpos
 
     def check(self, keys):
         # self.velocity[0] = 0
@@ -267,6 +297,7 @@ class Player(RigidBody):
             self.velocity.y = 200
             self.coyote_time = 100
             self.since_jump = self.app.delta_time
+            self.jump_sound.play(fade_ms=50)
 
         elif self.coyote_time_wall < 0.1 and (
             pg.key.get_just_pressed()[bindings["jump"]]
@@ -289,6 +320,8 @@ class Player(RigidBody):
 
         elif self.velocity[1] < -40:  # going down
             self.animation_manager.set_animation(3)
+            if self.since_falling == -1:
+                self.since_falling = 0  # fall start
 
         elif self.velocity[1] > 40:  # going up(jumping)
             self.animation_manager.set_animation(4)
@@ -301,9 +334,13 @@ class Player(RigidBody):
 
         else:  # my boy prolly just chillin rn am I right (gotta capitalie the I am I right)
             self.animation_manager.set_animation(0)
+            if self.since_falling > 0.1:  # fell down really hard
+                self.spawn_dust()
+            self.since_falling = -1
 
         if self.coyote_time < 0.1:  # on ground
             self.since_jump = -1
+            # self.since_falling = -1
 
         self.set_anim_scale()
 
@@ -336,6 +373,8 @@ class Player(RigidBody):
             "m_view",
             (self.app.camera.m_proj * self.app.camera.m_view * self.m_model).to_bytes(),
         )
+
+        self.app.share_data["post_process"].dust_clouds = self.dust_clouds
 
         self.vao.render()
 

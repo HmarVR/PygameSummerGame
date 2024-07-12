@@ -12,6 +12,7 @@ in vec4 instance_pos_data;
 
 uniform sampler2DArray Tiler;
 
+#include "uniforms"
 
 void main() {
 	vec3 color = texture(Tiler, vec3(uv_0, int(instance_pos_data.z))).rgb;

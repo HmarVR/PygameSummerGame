@@ -14,8 +14,6 @@ uniform sampler2DArray u_texture_0;
 #include "uniforms"
 
 
-
-
 void main() {
     vec3 color = texture(u_texture_0, vec3(flip ? (uv_0.xy * vec2(-1, 1)) : (uv_0.xy), frame)).rgb;
 

@@ -4,9 +4,13 @@ import struct
 import json
 from engine.vbo import InstancingVBO
 
+
 class Tilemap:
     def __init__(self, app, tile_size=16):
         self.app = app
+
+        self.app.share_data["tilemap"] = self
+
         self.ctx: mgl.Context = app.ctx
         self.tile_size = tile_size
         str_dict = {
@@ -95,7 +99,7 @@ class Tilemap:
         self.str_dict = str_dict
         with open(f"file.json") as file:
             self.tilemap = json.load(file)
-            self.app.share_data['tilemap'] = self
+            self.app.share_data["tilemap"] = self
             self.app.camera.freemove = False
 
         self.offgrid_tiles = []
@@ -104,13 +108,18 @@ class Tilemap:
         self.size = self.MAPSIZE + 256
 
         self.block_arr = np.zeros((self.size, 4), dtype="f4")
-        
-        giga_i = 0        
+
+        giga_i = 0
         for index, tilemap_i in reversed(self.tilemap.items()):
             for j in tilemap_i.items():
                 key = j[0].split(";")
                 print(key, int(index))
-                self.block_arr[giga_i] = [int(key[0]), -int(key[1]), self.str_dict[j[1][4]], int(index)*0.1 ]
+                self.block_arr[giga_i] = [
+                    int(key[0]),
+                    -int(key[1]),
+                    self.str_dict[j[1][4]],
+                    int(index) * 0.1,
+                ]
                 giga_i += 1
 
         self.block_arr.reshape((self.size, 4))
@@ -130,14 +139,17 @@ class Tilemap:
             },
             tmap=["Tiler"],
         )
+
         self.app.mesh.vao.vaos["tiler"] = self.vao
-        app.mesh.texture.textures["albasee"] = app.mesh.texture.get_texture_array("assets/textures/tiles/")
+        app.mesh.texture.textures["albasee"] = app.mesh.texture.get_texture_array(
+            "assets/textures/tiles/"
+        )
         self.tex = app.mesh.texture.textures["albasee"]
         self.vao.texture_bind(0, "Tiler", self.tex)
 
         self.pos = glm.vec3(0)
         self.roll = 0
-        self.scale = glm.vec2(self.tile_size/2)
+        self.scale = glm.vec2(self.tile_size / 2)
 
         self.m_model = self.get_model_matrix()
         self.vao.uniform_bind("m_model", self.m_model.to_bytes())
@@ -161,7 +173,7 @@ class Tilemap:
         return m_model
 
     def render(self): ...
-    
+
     def destroy(self):
-        self.app.mesh.vao.del_vao('tiler')
+        self.app.mesh.vao.del_vao("tiler")
         self.app.ctx.release(self.ibo)
