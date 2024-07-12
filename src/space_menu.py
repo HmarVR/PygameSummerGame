@@ -44,7 +44,10 @@ class SpaceMenu:
         self.spaceship = pygame.image.load(
             "assets/textures/spaceship.png"
         ).convert_alpha()
-        self.spaceship_cache = {}
+        self.spaceship_cache = {
+            rot: pygame.transform.rotate(self.spaceship, rot)
+            for rot in range(0, 360 + 1)
+        }
         self.spaceship_rot = 0
 
         self.vao = app.mesh.vao.get_vao(
@@ -74,8 +77,10 @@ class SpaceMenu:
         self.ui_surf.fill("black")
         h = self.fuelbar.height
         pos = (10, ((480 / 2) - (h / 2)))
-        
-        fuel_left = self.app.share_data["fuel"] / self.app.share_data["fuel_max"]  # normalized
+
+        fuel_left = (
+            self.app.share_data["fuel"] / self.app.share_data["fuel_max"]
+        )  # normalized
         fuel_height = fuel_left * self.fuelbar.height
         rest = (1 - fuel_left) * self.fuelbar.height
         rect = pygame.Rect(
@@ -88,18 +93,16 @@ class SpaceMenu:
         self.ui_surf.blit(self.fuelbar, pos)
 
         try:
-            surf = self.spaceship_cache[self.spaceship_rot]
+            surf = self.spaceship_cache[round(self.spaceship_rot)]
         except KeyError:
             surf = pygame.transform.rotate(self.spaceship, self.spaceship_rot)
-            self.spaceship_cache[self.spaceship_rot] = surf
+            self.spaceship_cache[round(self.spaceship_rot)] = surf
         r = pygame.Rect(0, 0, 640, 480)
         r.move_ip(
             -surf.width // 2, -surf.height // 2
         )  # im not refactoring this, dont touch
         self.ui_surf.blit(surf, r.center)
-        pygame.draw.circle(
-            self.ui_surf, "red", pygame.Rect(0, 0, 640, 480).center, 1.0
-        )
+        pygame.draw.circle(self.ui_surf, "red", pygame.Rect(0, 0, 640, 480).center, 1.0)
 
     def update(self):
         keys = pygame.key.get_pressed()
