@@ -67,14 +67,19 @@ class Planet:
         }
 
     def update_uniforms(self, uniforms={}):
-        # fmt: off
         uniforms["planetCenter"] = {
-                "value": lambda: struct.pack(
-                    "ff", *(glm.vec2(320, 240) - self.app.camera.position.xy / 500)
-                ),
-                "glsl_type": "vec2",
-            }
-        # fmt: on
+            "value": lambda: struct.pack(
+                "ff", *(glm.vec2(320, 240) - self.app.camera.position.xy / 500)
+            ),
+            "glsl_type": "vec2",
+        }
+        # DONT CHANGE THE 0.037! The hash 13 function in the gpu messes up if the value is too big and the time between colors will be broken
+        # So, we will apply % to keep color difference over time roughly the same
+        v = (self.app.elapsed_time / 1_000) % 0.037
+        uniforms["bgColorInput"] = {
+            "value": lambda: struct.pack("fff", *(0, 0, v)),
+            "glsl_type": "vec3",
+        }
 
         for key, obj in uniforms.items():
             _type = obj["glsl_type"]

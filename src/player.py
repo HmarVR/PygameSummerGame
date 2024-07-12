@@ -11,45 +11,60 @@ SLIDE_KEYFRAMES = [0.1]
 FALL_KEYFRAMES = [0.1]
 JUMP_KEYFRAMES = [0.1]
 
-neighbor_offsets = [(-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1), (0, 0)]
+# fmt: off
+neighbor_offsets = [
+    (-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1), (0, 0)
+]
+# fmt: on
+
 
 class RigidBody:
     def __init__(self):
         self.rect = pg.FRect(0, 0, 15, 15)
         self.velocity = glm.vec2(0, 0)
-        self.collision_types = {'bottom': False, 'top': False, 'right': False, 'left': False}
+        self.collision_types = {
+            "bottom": False,
+            "top": False,
+            "right": False,
+            "left": False,
+        }
         self.coyote_time = 0
         self.coyote_time_wall = 0
         self.elasticity = [0.0, 0.1]
         self.friction = [15.0, 0.95]
 
-    def get_neighboring_tiles(self, tilemap:"Tilemap"):
+    def get_neighboring_tiles(self, tilemap: "Tilemap"):
         tiles = []
         loc = (round(self.rect.x // 16), round(self.rect.y // 16))
 
         for offset in neighbor_offsets:
-            around_loc = f'{offset[0] + loc[0]};{offset[1] - loc[1]}'
+            around_loc = f"{offset[0] + loc[0]};{offset[1] - loc[1]}"
             if around_loc in tilemap:
                 if tilemap[around_loc][1]:
-                    x, y = around_loc.split(';')
+                    x, y = around_loc.split(";")
                     x = (int(x)) * 16
                     y = (-int(y)) * 16
                     r = pg.Rect(x, y, 16, 16)
                     tiles.append(r)
-        
+
         return tiles
 
-    def collision_test(self, rect, tileset:"Tilemap"):
+    def collision_test(self, rect, tileset: "Tilemap"):
         hit_list = []
-        
+
         for tile in self.get_neighboring_tiles(tileset):
             if rect.colliderect(tile):
                 hit_list.append(tile)
 
         return hit_list
 
-    def apply_physics(self, tilemap:"Tilemap", dt:float):
-        self.collision_types = {'bottom': False, 'top': False, 'right': False, 'left': False}
+    def apply_physics(self, tilemap: "Tilemap", dt: float):
+        self.collision_types = {
+            "bottom": False,
+            "top": False,
+            "right": False,
+            "left": False,
+        }
 
         self.rect.x += self.velocity[0] * dt
         do_gravity = 392
@@ -60,13 +75,13 @@ class RigidBody:
         for block in hit_list:
             if self.velocity[0] > 0:
                 self.rect.right = block.left
-                self.collision_types['left'] = True
+                self.collision_types["left"] = True
                 if self.move > 0.275:
                     self.coyote_time_wall = 0
 
             if self.velocity[0] < 0:
                 self.rect.left = block.right
-                self.collision_types['right'] = True
+                self.collision_types["right"] = True
                 if self.move > 0.275:
                     self.coyote_time_wall = 0
 
@@ -74,67 +89,70 @@ class RigidBody:
                 self.velocity[1] -= self.velocity[1] * self.friction[1]
             else:
                 self.velocity[1] -= self.velocity[1] * self.friction[1] * dt
-                
+
             self.velocity[0] = -self.velocity[0] * self.elasticity[0]
-            self.velocity[0] = 0 if (self.velocity[0]<1.5 and self.velocity[0]>-1.5) else self.velocity[0]
-        
+            self.velocity[0] = (
+                0
+                if (self.velocity[0] < 1.5 and self.velocity[0] > -1.5)
+                else self.velocity[0]
+            )
+
             break
 
         self.rect.y += self.velocity[1] * dt
         hit_list = self.collision_test(self.rect, tilemap)
-        
+
         self.velocity[1] -= do_gravity * dt
-        
+
         for block in hit_list:
             if self.velocity[1] < 0:
                 self.rect.top = block.bottom
-                self.collision_types['bottom'] = True
+                self.collision_types["bottom"] = True
                 self.coyote_time = 0
 
             if self.velocity[1] > 0:
                 self.rect.bottom = block.top
-                self.collision_types['top'] = True
-
+                self.collision_types["top"] = True
 
             if self.friction[0] == 0 or self.friction[0] == 1:
                 self.velocity[0] -= self.velocity[0] * self.friction[0]
             else:
                 self.velocity[0] -= self.velocity[0] * self.friction[0] * dt
-            
-            
+
             self.velocity[1] = -self.velocity[1] * self.elasticity[1]
-            self.velocity[1] = 0 if (self.velocity[1]<1 and self.velocity[1]>-1) else self.velocity[1]
+            self.velocity[1] = (
+                0
+                if (self.velocity[1] < 1 and self.velocity[1] > -1)
+                else self.velocity[1]
+            )
             break
-            
+
         self.velocity[1] = max(self.velocity[1], -clamp_gravity)
-        
-        
-        
+
 
 class Player(RigidBody):
-    def __init__(self, app:"Game"):
+    def __init__(self, app: "Game"):
         super().__init__()
         self.app = app
-        
+
         self.app.mesh.vao.add_vao(
             vao_name="player",
             fbo=self.app.mesh.vao.Framebuffers.framebuffers["default"],
-            program=self.app.mesh.vao.program.programs['player'],
-            vbo=self.app.mesh.vao.vbo.vbos['plane'],
-            umap=
-			{ 
-				"m_model": "mat4",
-				"m_view": "mat4",
-				"frame": "int",
+            program=self.app.mesh.vao.program.programs["player"],
+            vbo=self.app.mesh.vao.vbo.vbos["plane"],
+            umap={
+                "m_model": "mat4",
+                "m_view": "mat4",
+                "frame": "int",
                 "flip": "bool",
-			},
+            },
             tmap=["u_texture_0"],
         )
-        self.vao = self.app.mesh.vao.vaos['player']
-        
+        self.vao = self.app.mesh.vao.vaos["player"]
+
         self.texture = self.app.mesh.texture.textures["player"]
         self.vao.texture_bind(0, "u_texture_0", self.texture)
-        
+
         self.pos = glm.vec3(902, 0, 0)
         self.rect = pg.FRect(902, 0, 14, 15)
         self.roll = 0
@@ -146,35 +164,35 @@ class Player(RigidBody):
         self.fall_animation = Animation(FALL_KEYFRAMES)
         self.jump_animation = Animation(JUMP_KEYFRAMES)
         self.animations = [
-            self.idle_animation, 
-            self.walk_animation, 
-            self.slide_animation, 
-            self.fall_animation, 
-            self.jump_animation, 
+            self.idle_animation,
+            self.walk_animation,
+            self.slide_animation,
+            self.fall_animation,
+            self.jump_animation,
         ]
         self.animation_manager = AnimationManager(self.animations)
         self.move = 1
         self.flip = False
-        
-        self.anim_scale = [1,1]
+
+        self.anim_scale = [1, 1]
         self.since_jump = -1
         self.since_bounce = -1
 
     def set_anim_scale(self):
         if self.since_jump != -1:
             self.since_jump += self.app.delta_time
-        
+
         if self.since_bounce != -1:
             self.since_bounce += self.app.delta_time
         self.anim_scale = [1, 1]
-        
+
         max_time = 0.4
         if 0 <= self.since_jump < max_time:
             # self.since_jump = -1
             v = max(0, max_time - self.since_jump)
             self.anim_scale[0] = 1 - (v * 1)
             self.anim_scale[1] = 1 + (v * 2)
-        
+
         max_time = 0.3
         if 0 <= self.since_bounce < max_time:
             # self.since_bounce = -1
@@ -186,28 +204,33 @@ class Player(RigidBody):
         # self.velocity[0] = 0
         MAX_SPED = 900 if self.move > 0.275 else 1
         ACC_SPED = 800
-        
+
         MAX_WINDSPED = 200 if self.move > 0.275 else 1
         ACC_WINDSPED = 250
-        
-        input_velocity = glm.vec2(0)
-        
-        if keys[bindings['left']] and keys[bindings['right']]:
-            self.elasticity[0] = 0.0 # yea now pressin both buttons does something
 
-        elif keys[bindings['right']]:
+        input_velocity = glm.vec2(0)
+
+        if (keys[bindings["left"]] or keys[bindings["left_arrow"]]) and (
+            keys[bindings["right"]] or keys[bindings["right_arrow"]]
+        ):
+            self.elasticity[0] = 0.0  # yea now pressin both buttons does something
+
+        elif keys[bindings["right"]] or keys[bindings["right_arrow"]]:
             self.elasticity[0] = 0.0
-            input_velocity.x += (ACC_SPED if self.coyote_time < 0.1 else ACC_WINDSPED) * self.app.delta_time
+            input_velocity.x += (
+                ACC_SPED if self.coyote_time < 0.1 else ACC_WINDSPED
+            ) * self.app.delta_time
             # TO NON-CALCULUS PEOPLE: because of chain rule this should be dP/dT
             self.flip = False
 
-        elif keys[bindings['left']]:
+        elif keys[bindings["left"]] or keys[bindings["left_arrow"]]:
             self.elasticity[0] = 0.0
-            input_velocity.x -= (ACC_SPED if self.coyote_time < 0.1 else ACC_WINDSPED) * self.app.delta_time
+            input_velocity.x -= (
+                ACC_SPED if self.coyote_time < 0.1 else ACC_WINDSPED
+            ) * self.app.delta_time
             # TO NON-CALCULUS PEOPLE: because of chain rule this should be dP/dT
             self.flip = True
-            
-        
+
         # Calculate potential new velocity
         potential_velocity = self.velocity.x + input_velocity.x
         MAX_SPEED = MAX_SPED if self.coyote_time < 0.1 else MAX_WINDSPED
@@ -220,9 +243,17 @@ class Player(RigidBody):
                     input_velocity = glm.normalize(input_velocity) * max_addition
             else:
                 max_addition = -MAX_SPEED + glm.length(self.velocity.x)
-                if self.velocity.x >= MAX_SPEED and input_velocity.x < 0 and self.move > 0.205:
+                if (
+                    self.velocity.x >= MAX_SPEED
+                    and input_velocity.x < 0
+                    and self.move > 0.205
+                ):
                     input_velocity = glm.normalize(input_velocity) * max_addition
-                elif self.velocity.x <= -MAX_SPEED and input_velocity.x > 0 and self.move > 0.205:
+                elif (
+                    self.velocity.x <= -MAX_SPEED
+                    and input_velocity.x > 0
+                    and self.move > 0.205
+                ):
                     input_velocity = glm.normalize(input_velocity) * max_addition
                 else:
                     input_velocity = glm.vec2(0)
@@ -230,65 +261,74 @@ class Player(RigidBody):
         # Update the player's velocity with the scaled input
         self.velocity += input_velocity
 
-        if self.coyote_time < 0.1 and keys[bindings['jump']]:
+        if self.coyote_time < 0.1 and (
+            keys[bindings["jump"]] or keys[bindings["jump_arrow"]]
+        ):
             self.velocity.y = 200
             self.coyote_time = 100
             self.since_jump = self.app.delta_time
-            
-        elif self.coyote_time_wall < 0.1 and pg.key.get_just_pressed()[bindings['jump']]:
+
+        elif self.coyote_time_wall < 0.1 and (
+            pg.key.get_just_pressed()[bindings["jump"]]
+            or pg.key.get_just_pressed()[bindings["jump_arrow"]]
+        ):
             self.velocity.y = 150
-            self.velocity.x = -170 if self.collision_types['left'] else 170
+            self.velocity.x = -170 if self.collision_types["left"] else 170
             self.coyote_time_wall = 100
             self.move = 0
             self.since_bounce = self.app.delta_time  # wall bounce
-            
+
         if self.coyote_time_wall < 0.1:
             self.animation_manager.set_animation(2)
-            
-        elif (keys[bindings['right']] or keys[bindings['left']]) and self.coyote_time < 0.1:
+
+        elif (
+            (keys[bindings["right"]] or keys[bindings["right_arrow"]])
+            or (keys[bindings["left"]] or keys[bindings["left_arrow"]])
+        ) and self.coyote_time < 0.1:
             self.animation_manager.set_animation(1)
-            
+
         elif self.velocity[1] < -40:  # going down
             self.animation_manager.set_animation(3)
-            
+
         elif self.velocity[1] > 40:  # going up(jumping)
             self.animation_manager.set_animation(4)
-            
-            
-        elif (keys[bindings['right']] and keys[bindings['left']]) and self.coyote_time < 0.1:
+
+        elif (
+            (keys[bindings["right"]] or keys[bindings["right_arrow"]])
+            and (keys[bindings["left"]] or keys[bindings["left_arrow"]])
+        ) and self.coyote_time < 0.1:
             self.animation_manager.set_animation(0)
-            
-        else: # my boy prolly just chillin rn am I right (gotta capitalie the I am I right)
+
+        else:  # my boy prolly just chillin rn am I right (gotta capitalie the I am I right)
             self.animation_manager.set_animation(0)
 
         if self.coyote_time < 0.1:  # on ground
             self.since_jump = -1
-        
+
         self.set_anim_scale()
-            
+
     def update(self):
         self.elasticity[0] = 0.1
         keys = pg.key.get_pressed()
         self.check(keys)
-        self.apply_physics(self.app.share_data['tilemap'].tilemap['0'], self.app.delta_time)
+        self.apply_physics(
+            self.app.share_data["tilemap"].tilemap["0"], self.app.delta_time
+        )
         self.coyote_time += self.app.delta_time
         self.coyote_time_wall += self.app.delta_time
-        
+
         self.boxcam = glm.clamp(self.boxcam, glm.vec2(-30), glm.vec2(30))
-        self.boxcam += self.pos.xy - glm.vec2(self.rect.x-1, self.rect.y)
-        
-        self.pos = glm.vec3(self.rect[0]-1, self.rect[1], 0)
-        
-        
-        
+        self.boxcam += self.pos.xy - glm.vec2(self.rect.x - 1, self.rect.y)
+
+        self.pos = glm.vec3(self.rect[0] - 1, self.rect[1], 0)
+
         self.app.camera.position.xy = self.pos.xy + self.boxcam
         self.m_model = self.get_model_matrix()
-        
-        
+
         self.animation_manager.update(self.app.delta_time)
         self.frame = self.animation_manager.get_frame()
         self.move += self.app.delta_time
-        
+
         self.vao.uniform_bind("m_model", self.m_model.to_bytes())
         self.vao.uniform_bind("frame", struct.pack("i", self.frame))
         self.vao.uniform_bind("flip", struct.pack("?", self.flip))
@@ -296,7 +336,7 @@ class Player(RigidBody):
             "m_view",
             (self.app.camera.m_proj * self.app.camera.m_view * self.m_model).to_bytes(),
         )
-        
+
         self.vao.render()
 
     def get_model_matrix(self):
@@ -306,56 +346,62 @@ class Player(RigidBody):
         # rotate
         m_model = glm.rotate(m_model, glm.radians(self.roll), glm.vec3(0, 0, 1))
         # scale
-        m_model = glm.scale(m_model, glm.vec3(self.scale[0] * self.anim_scale[0], self.scale[1] * self.anim_scale[1], 1))
+        m_model = glm.scale(
+            m_model,
+            glm.vec3(
+                self.scale[0] * self.anim_scale[0],
+                self.scale[1] * self.anim_scale[1],
+                1,
+            ),
+        )
         return m_model
-        
+
 
 class Animation:
-    def __init__(self, Keyframes:List[float]):
+    def __init__(self, Keyframes: List[float]):
         self.Keyframes = Keyframes
         self.currentKeyframe = 0
         self.animationTimeSoFar = 0
         self.len = len(self.Keyframes)
         self.__iterCount = 0
-        
+
     def __len__(self) -> int:
         self.len = len(self.Keyframes)
         return self.len
-        
+
     def __iter__(self):
         return self
-        
+
     def __next__(self):
         if self.__iterCount > self.len:
             self.__iterCount = 0
             raise StopIteration
         self.Keyframes[self.__iterCount]
         self.__iterCount += 1
-    
-    def update(self, dt:float):
+
+    def update(self, dt: float):
         self.animationTimeSoFar += dt
         if self.animationTimeSoFar > self.Keyframes[self.currentKeyframe]:
-            self.currentKeyframe = (self.currentKeyframe+1)%len(self.Keyframes)
+            self.currentKeyframe = (self.currentKeyframe + 1) % len(self.Keyframes)
             self.animationTimeSoFar = 0
-            
-            
+
+
 class AnimationManager:
-    def __init__(self, Animations:List[Animation]):
+    def __init__(self, Animations: List[Animation]):
         self.Animations = Animations
         self.currentAnimation = 0
-        
-    
-    def update(self, dt:float):
+
+    def update(self, dt: float):
         self.Animations[self.currentAnimation].update(dt)
-        
-    def set_animation(self, animation_id:int):
+
+    def set_animation(self, animation_id: int):
         if self.currentAnimation != animation_id:
             self.currentAnimation = animation_id
             self.Animations[self.currentAnimation].currentKeyframe = 0
-        
+
     def get_frame(self) -> int:
         frame = 0
         for i, e in enumerate(self.Animations):
             if i == self.currentAnimation:
-                return frame+self.Animations[self.currentAnimation].currentKeyframe
+                return frame + self.Animations[self.currentAnimation].currentKeyframe
             frame += len(e)

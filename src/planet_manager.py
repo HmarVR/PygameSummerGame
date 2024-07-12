@@ -111,7 +111,7 @@ cee3ef
         return self.cam_pos
 
     def get_bg_color_inp(self):
-        return (self.cam_pos.x / 10_000_000, self.cam_pos.y / 10_000_000, self.app.elapsed_time / 150_000)
+        return (self.cam_pos.x / 10_000_000, self.cam_pos.y / 10_000_000,0) # self.app.elapsed_time / 150_000)
     
     def get_bg_noise_inp(self):
         return (-self.cam_pos.x / 100, -self.cam_pos.y / 100, 0)#self.app.elapsed_time / 10)
