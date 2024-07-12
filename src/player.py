@@ -188,7 +188,7 @@ class Player(RigidBody):
         ACC_SPED = 800
         
         MAX_WINDSPED = 200 if self.move > 0.275 else 1
-        ACC_WINDSPED = 170
+        ACC_WINDSPED = 250
         
         input_velocity = glm.vec2(0)
         

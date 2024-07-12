@@ -20,7 +20,7 @@ class Sun:
         self.app = app
         self.app.share_data["space_planet"] = self
         
-        self.app.camera.SPEED = 150
+        self.app.camera.SPEED = 250
         
         self.ctx: zengl.context = app.ctx
 

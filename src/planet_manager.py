@@ -18,24 +18,28 @@ BODIES = {
         "bodyPos": Vector2(16410, 5917),
         "lightDirection": [0.3, 0.6, -1.0],
         "isStar": True,
+        "uiColor": "yellow",
     },
     "Albasee": {
         "bodyRadius": 500 / 4,  # pixels
         "cloudRadius": 530 / 4,
         "bodyPos": Vector2(11_300, 27_450),
         "lightDirection": [0.3, 0.6, -1.0],  # I'll mess with this later
+        "uiColor": "orange",
     },
     "Vulakit": {
         "bodyRadius": 200 / 4,
         "cloudRadius": 250 / 4,
         "bodyPos": Vector2(9_000, 7_750),
         "lightDirection": [0.3, 0.6, -1.0],  # I'll mess with this later
+        "uiColor": "yellow",
     },
     "Platee": {
         "bodyRadius": 330 / 4,
         "cloudRadius": 350 / 4,
         "bodyPos": Vector2(30083, 11523),
         "lightDirection": [0.3, 0.6, -1.0],  # I'll mess with this later
+        "uiColor": "green",
     },
 }
 
@@ -52,6 +56,8 @@ class PlanetManager:
 
         self.get_closest_planet()
         self.tp_planet()
+
+        self.body_rad_mul = 1.0
 
     def load_planet_textures(self):
         self.planet_textures = {}
@@ -89,6 +95,27 @@ cee3ef
         # scrolls the planet(texture uv)
         return self.app.elapsed_time * self.time_speed * self.planetRotationSpeed
 
+    def get_body_rad(self):
+        return self.bodyRadius * self.body_rad_mul
+
+    def get_cloud_rad(self):
+        dif = self.cloudRadius - self.bodyRadius
+        return self.bodyRadius * self.body_rad_mul + dif
+
+    def get_campos(self):
+        self.cam_pos = self.app.camera.position.xy
+        self.cam_pos *= (
+            -1
+        )  # particles are using this uniform, so they need to move in the exact reverse dir that of the player is moving
+        self.cam_pos /= 10.0
+        return self.cam_pos
+
+    def get_bg_color_inp(self):
+        return (self.cam_pos.x / 10_000_000, self.cam_pos.y / 10_000_000, self.app.elapsed_time / 150_000)
+    
+    def get_bg_noise_inp(self):
+        return (-self.cam_pos.x / 100, -self.cam_pos.y / 100, 0)#self.app.elapsed_time / 10)
+
     def get_uniforms(self):
         self.time_speed = 1.0
         self.planetRotationSpeed = 0.01
@@ -104,11 +131,14 @@ cee3ef
                 "glsl_type": "vec2",
             },
             "bodyRadius": {
-                "value": lambda: struct.pack("f", self.bodyRadius),
+                "value": lambda: struct.pack("f", self.get_body_rad()),
                 "glsl_type": "float",
             },
             "cloudRadius": {
-                "value": lambda: struct.pack("f", self.cloudRadius),
+                "value": lambda: struct.pack(
+                    "f",
+                    self.get_cloud_rad(),
+                ),
                 "glsl_type": "float",
             },
             "screenResolution": {
@@ -151,11 +181,17 @@ cee3ef
                 ),  # TODO, make this a func
                 "glsl_type": "bool",
             },
-            "cameraPos": {
-                "value": lambda: struct.pack(
-                    "ff", self.app.camera.position.x, self.app.camera.position.y
-                ),
+            "camPos": {
+                "value": lambda: struct.pack("ff", *self.get_campos()),
                 "glsl_type": "vec2",
+            },
+            "bgNoiseInput": {
+                "value": lambda: struct.pack("fff", *self.get_bg_noise_inp()),
+                "glsl_type": "vec3",
+            },
+            "bgColorInput": {
+                "value": lambda: struct.pack("fff", *self.get_bg_color_inp()),
+                "glsl_type": "vec3",
             },
         }
 
@@ -186,6 +222,18 @@ cee3ef
                 "planetOffset": {  # for rotating planet in X axis
                     "value": lambda: struct.pack("f", self.get_planet_offset()),
                     "glsl_type": "float",
+                },
+                "camPos": {
+                    "value": lambda: struct.pack("ff", *self.get_campos()),
+                    "glsl_type": "vec2",
+                },
+                "bgNoiseInput": {
+                    "value": lambda: struct.pack("fff", *self.get_bg_noise_inp()),
+                    "glsl_type": "vec3",
+                },
+                "bgColorInput": {
+                    "value": lambda: struct.pack("fff", *self.get_bg_color_inp()),
+                    "glsl_type": "vec3",
                 },
             }
             return updated
