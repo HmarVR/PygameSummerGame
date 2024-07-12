@@ -108,7 +108,7 @@ cee3ef
         return self.app.elapsed_time * self.time_speed * self.planetRotationSpeed
 
     def get_campos(self):
-        self.cam_pos = deepcopy(self.app.camera.position.xy)
+        self.cam_pos = self.app.camera.position.xy
         self.cam_pos *= -1  # particles are using this uniform, so they need to move in the exact reverse dir that of the player is moving
         self.cam_pos /= 10.0
         return self.cam_pos
@@ -296,6 +296,7 @@ cee3ef
 
         if past != self.latest_planet:
             self.sun.update_planet_tex(self.latest_planet)
+            del past
             return True
         return False
 

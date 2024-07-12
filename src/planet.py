@@ -81,7 +81,6 @@ class Planet:
         }
 
     def update_uniforms(self, uniforms):
-        del uniforms["planetCenter"]
         for key, obj in uniforms.items():
             _type = obj["glsl_type"]
             func = obj["value"]
