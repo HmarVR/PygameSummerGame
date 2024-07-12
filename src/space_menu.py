@@ -60,13 +60,13 @@ class SpaceMenu:
 
     def send_tex(self):
         try:
-            self.app.mesh.texture.del_texture("ui")
+            self.app.mesh.texture.del_texture("space_ui")
         except:
             pass
-        self.app.mesh.texture.textures["ui"] = self.app.mesh.texture.from_surface(
+        self.app.mesh.texture.textures["space_ui"] = self.app.mesh.texture.from_surface(
             self.ui_surf
         )
-        self.tex0 = self.app.mesh.texture.textures["ui"]
+        self.tex0 = self.app.mesh.texture.textures["space_ui"]
         self.vao.texture_bind(0, "T_ui", self.tex0)
 
     def update_surf(self):
@@ -149,4 +149,4 @@ class SpaceMenu:
 
     def destroy(self):
         self.app.mesh.vao.del_vao(self.vao_name)
-        self.app.mesh.texture.del_texture("ui")
+        self.app.mesh.texture.del_texture("space_ui")

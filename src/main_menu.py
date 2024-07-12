@@ -37,7 +37,9 @@ class MainMenu:
         self.button_width = 100
         self.button_height = 50
 
-        self.pg_snake = pygame.image.load_sized_svg("assets/textures/pygame-ce.svg", (180, 90)).convert_alpha()
+        self.pg_snake = pygame.image.load_sized_svg(
+            "assets/textures/pygame-ce.svg", (180, 90)
+        ).convert_alpha()
         pygame.transform.hsl(self.pg_snake, 0, -0.1, -0.2, self.pg_snake)
 
         self.font = pygame.Font("assets/fonts/renogare/Renogare-Regular.otf", 24)
@@ -52,7 +54,7 @@ class MainMenu:
             fbo=self.app.mesh.vao.Framebuffers.framebuffers["default"],
             program=self.app.mesh.vao.program.programs["main_menu_ui"],
             vbo=self.app.mesh.vao.vbo.vbos["plane"],
-            umap={"u_plsdriver": "vec3", "time":"float"},  # some drivers want this
+            umap={"u_plsdriver": "vec3", "time": "float"},  # some drivers want this
             tmap=["T_ui"],
         )
         app.mesh.vao.vaos["main_menu"] = self.vao
@@ -63,13 +65,18 @@ class MainMenu:
         self.vao.uniform_bind("time", struct.pack("f", self.app.elapsed_time))
 
     def send_tex(self):
+        # print(sys.getsizeof(self.app.mesh.texture.textures))
         try:
             self.app.mesh.texture.del_texture("ui")
+            del self.tex0
+            # print("deleting texture")
         except:
             pass
+            # print("no texture :(")
         self.app.mesh.texture.textures["ui"] = self.app.mesh.texture.from_surface(
             self.ui_surf
         )
+        # print("set new texture")
         self.tex0 = self.app.mesh.texture.textures["ui"]
         self.vao.texture_bind(0, "T_ui", self.tex0)
 
@@ -161,7 +168,7 @@ class MainMenu:
         self.letter_draw()
         r = self.pg_snake.get_rect()
         r.topleft = [self.app.WIN_SIZE[0] - r.width, self.app.WIN_SIZE[1] - r.height]
-        r.move_ip(-6,-6)
+        r.move_ip(-6, -6)
         self.ui_surf.blit(self.pg_snake, r.topleft)
 
     @state

@@ -1,6 +1,5 @@
 import glm
 import math
-from copy import deepcopy
 import struct
 import zengl
 import webcolors
@@ -53,7 +52,9 @@ class Sun:
     def update_planet_tex(self, planet_name):
         try:
             texs = self.app.mesh.texture.textures
-            texs["sun"] = self.planet_manager.planet_textures[planet_name]
+            texs["sun"] = self.planet_manager.planet_textures[planet_name.lower()]
+            print(planet_name.lower())
+            print(self.planet_manager.planet_textures)
             # self.tex0 = texs["sun"]
             self.vao.texture_bind(0, "T_planet", texs["sun"])
         except:

@@ -174,8 +174,6 @@ class Textures:
             auto_mipmaps=auto_mipmaps,
         )
         
-        
-        
     def del_texture(self, texture_name:str):
         self.textures[texture_name].destroy(self.ctx)
         del self.textures[texture_name]

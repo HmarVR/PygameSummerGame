@@ -1,6 +1,5 @@
 import glm
 import math
-from copy import deepcopy
 import struct
 import zengl
 import webcolors

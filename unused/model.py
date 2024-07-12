@@ -5,7 +5,6 @@ import glm
 import sys
 import time
 import math
-from copy import deepcopy
 import struct
 import json
 import zengl

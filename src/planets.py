@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING
 from pygame import Vector2, image
 import math
-from copy import deepcopy
 import struct
 import webcolors
 
@@ -159,9 +158,8 @@ cee3ef
         }
 
     def dynamic_uniforms(self):
-        past = deepcopy(self.latest_planet)
-        self.get_closest_planet()
-        if past != self.latest_planet:
+        isSamePlanet = self.get_closest_planet()
+        if not isSamePlanet:
             # moved to diff planet
             return self.get_uniforms()
         else:
@@ -191,20 +189,6 @@ cee3ef
             return updated
 
     def get_light_moved(self):
-        """
-        startLightRot = 0.0
-        rot = startLightRot - (
-            self.app.elapsed_time * self.light_speed
-        )  # between 0 and 2pi
-        rot %= 2.0 * math.pi
-        offset = (math.sin(rot) * 2.0, math.cos(rot) * 2.0)
-
-        newLightDirection = deepcopy(self.lightDirection)
-
-        newLightDirection[0] += offset[0]
-        newLightDirection[2] += offset[1]
-        """
-
         newLightDirection = [
             math.sin(self.app.elapsed_time),
             -0.6,
@@ -214,7 +198,6 @@ cee3ef
         return newLightDirection
 
     def get_closest_planet(self):
-        past = deepcopy(self.latest_planet)
         # calculates uniforms for planet pos
         closest_dis = 999_999_999
         body_name = None
@@ -227,6 +210,8 @@ cee3ef
                 closest_dis = dis.length()
                 body_name = name
 
+        isSamePlanet = self.latest_planet == body_name
+        
         self.latest_planet = body_name
         body = BODIES[body_name]
         self.bodyRadius = body["bodyRadius"]
@@ -237,8 +222,9 @@ cee3ef
         self.has_changed_planet = True if self.latest_planet != body_name else False
         self.planet_id = list(BODIES.keys()).index(body_name)
 
-        if past != self.latest_planet:
+        if not isSamePlanet:
             self.sun.update_planet_tex(self.latest_planet)
+        return isSamePlanet
 
     def tp_planet(self, id=None):
         if id == None:
@@ -251,7 +237,7 @@ cee3ef
     def land_in_planet(self):
         cam_pos = Vector2(self.app.camera.position.x, self.app.camera.position.y)
         body = BODIES[self.latest_planet]
-        bodypos: Vector2 = deepcopy(body["bodyPos"])
+        bodypos: Vector2 = body["bodyPos"]
         bodypos -= Vector2(320, 240)
         dis = cam_pos - bodypos
         if dis.length() <= body["bodyRadius"] + 100:
