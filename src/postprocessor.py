@@ -67,7 +67,7 @@ class ProcessRender:
         self.vao.uniform_bind("screenResolution", struct.pack("ff", *(640, 480)))
         self.send_dust_clouds()
         self.vao.uniform_bind("camPos", struct.pack("fff", *self.app.camera.position))
-        print(self.dust_clouds)
+        # print(self.dust_clouds)
 
         self.vao.render()
         if not self.isSceneInit:

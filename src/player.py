@@ -334,8 +334,9 @@ class Player(RigidBody):
 
         else:  # my boy prolly just chillin rn am I right (gotta capitalie the I am I right)
             self.animation_manager.set_animation(0)
-            if self.since_falling > 0.1:  # fell down really hard
-                self.spawn_dust()
+        
+        if self.since_falling > 0.1 and self.collision_types["bottom"]:  # fell down really hard
+            self.spawn_dust()
             self.since_falling = -1
 
         if self.coyote_time < 0.1:  # on ground
