@@ -97,7 +97,7 @@ class Tilemap:
             'VulakitBasalt15': 79,
         }
         self.str_dict = str_dict
-        with open(f"file3.json") as file:
+        with open(f"file.json") as file:
             self.tilemap = json.load(file)
             self.app.share_data["tilemap"] = self
             self.app.camera.freemove = False

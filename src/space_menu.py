@@ -86,7 +86,8 @@ class SpaceMenu:
             r2.move_ip(0, 80)
             self.ui_surf.blit(surf, r2.topleft)
         elif self.since_no_fuel > 10:
-            pass # calculate fuel and give it to the player
+            self.app.share_data["spaceship"].fuel = 1000
+            self.app.share_data["spaceship"].fuel_max = 1000
 
     def init_map(self):
         self.map_area = pygame.Rect(0,0,1,1)
