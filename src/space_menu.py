@@ -72,7 +72,7 @@ class SpaceMenu:
             rect = pygame.Rect(*pos, rad, rad)
             self.map_area.union_ip(rect)
         self.map_area.inflate_ip(1000, 1000)
-        print(self.map_area)
+        # print(self.map_area)
 
     def draw_map(self):
         screen_area = pygame.Rect(0,0, 100,100)

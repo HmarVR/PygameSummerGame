@@ -94,7 +94,7 @@ cee3ef
 
     def get_planet_offset(self):
         # scrolls the planet(texture uv)
-        return self.app.elapsed_time * self.time_speed * self.planetRotationSpeed
+        return self.app.elapsed_time * self.time_speed * self.planetRotationSpeed * 5.0
 
     def get_body_rad(self):
         return self.bodyRadius * self.body_rad_mul
@@ -295,4 +295,4 @@ cee3ef
         dis = cam_pos - bodypos
         if dis.length() <= body["bodyRadius"] + 100:
             self.app.scene_manager.load_scene("planet")
-        print(dis.length())
+        # print(dis.length())

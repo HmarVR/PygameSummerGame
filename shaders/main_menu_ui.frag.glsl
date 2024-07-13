@@ -17,7 +17,7 @@ vec2 CRTCurveUV(vec2 uv)
 {
     uv = uv * 2.0 - 1.0;
     // Increase the offset factors to make the curvature more pronounced
-    vec2 offset = abs(uv.yx) / vec2(3.0, 2.0); // Adjust these values for stronger curvature
+    vec2 offset = abs(uv.yx) / vec2(3.0, 2.5); // Adjust these values for stronger curvature
     uv = uv + uv * offset * offset;
     uv = uv * 0.5 + 0.5;
     return uv;
@@ -71,13 +71,13 @@ vec3 water() {
 void main() {	
     vec4 final;
     vec2 uv = uv_0;
-    float crt_scale = 1.05;
+    float crt_scale = 1.1;
     vec2 crtUV = CRTCurveUV( uv * crt_scale - vec2((crt_scale - 1.0) / 2.0) );
     
     // replace with normal uv if you dont want the uv to be curved
     vec4 col = texture(T_ui, crtUV).rgba;
 
-    if (col.g > 0.99) {
+    if (col.g > 0.99 && col.r < 0.5) {
         final = vec4(water(), 1.0);
     } else {
         final = col;

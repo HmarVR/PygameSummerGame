@@ -113,7 +113,7 @@ class Tilemap:
         for index, tilemap_i in reversed(self.tilemap.items()):
             for j in tilemap_i.items():
                 key = j[0].split(";")
-                print(key, int(index))
+                # print(key, int(index))
                 self.block_arr[giga_i] = [
                     int(key[0]),
                     -int(key[1]),
