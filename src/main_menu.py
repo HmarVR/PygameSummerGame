@@ -8,6 +8,8 @@ import zengl
 import math
 import struct
 
+WEB = True if sys.platform in ("wasi", "emscripten") else False
+
 if TYPE_CHECKING:
     from main import Game
 
@@ -40,7 +42,8 @@ class MainMenu:
         self.pg_snake = pygame.image.load_sized_svg(
             "assets/textures/pygame-ce.svg", (180, 90)
         ).convert_alpha()
-        pygame.transform.hsl(self.pg_snake, 0, -0.1, -0.2, self.pg_snake)
+        if not WEB:
+            pygame.transform.hsl(self.pg_snake, 0, -0.1, -0.2, self.pg_snake)
 
         self.font = pygame.Font("assets/fonts/renogare/Renogare-Regular.otf", 24)
         self.midfont = pygame.Font("assets/fonts/renogare/Renogare-Regular.otf", 28)
@@ -132,7 +135,7 @@ class MainMenu:
         text = "Ore Oddysey"
         sep_width = 10
         sep_count = len(text) - 1
-        w = self.bigfont.render(text, True, "green").width + sep_width * sep_count
+        w = self.bigfont.render(text, True, "green").get_width() + sep_width * sep_count
 
         let_mul = math.pi / len(text)  # so um idk how to explain,
         # if the letter count is too much + let mul is too high then
@@ -155,7 +158,7 @@ class MainMenu:
                     * rad
                 )
                 self.ui_surf.blit(surf, start_pos)
-                start_pos[0] += surf.width + sep_width
+                start_pos[0] += surf.get_width() + sep_width
 
     def update_surf(self):
         self.ui_surf.fill(("#2E2C33"))

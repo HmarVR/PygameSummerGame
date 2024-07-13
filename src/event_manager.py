@@ -15,19 +15,28 @@ if TYPE_CHECKING:
 class EventManager:
     def __init__(self, app: "Game") -> None:
         self.app = app
+        self.app.share_data["event_manager"] = self
+        
+        self.just_pressed = []
 
     def handle_events(self, events):
+        self.just_pressed = []
         for event in events:
             if event.type == pg.QUIT or (
                 event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE
             ):
-                self.app.quit()
+                if WEB:
+                    pass
+                else:
+                    self.app.quit()
 
             if event.type == pg.WINDOWSIZECHANGED:
                 self.app.WIN_SIZE = glm.ivec2(event.x, event.y)
                 self.app.share_data["sizit"]()
                 
             if (event.type == pg.KEYDOWN):
+                self.just_pressed.append(event.key)
+                
                 if event.key == pg.K_F1:
                     if WEB:
                         pass
@@ -49,7 +58,6 @@ class EventManager:
                         self.app.share_data["main_menu"].move_selected(-1)
                     elif event.key == pg.K_e:
                         self.app.share_data["main_menu"].click()
-
                 elif event.key == pg.K_e:
                     try: self.app.share_data["space_planet"].planet_manager.land_in_planet()
                     except: pass

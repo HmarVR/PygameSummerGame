@@ -3,10 +3,10 @@
 # dependencies = [
 #   "pygame-ce",
 #   "numpy",
-#   "struct",
 #   "zengl",
 #   "webcolors",
-#   "glm"
+#   "glm",
+#   "pillow"
 # ]
 # ///
 

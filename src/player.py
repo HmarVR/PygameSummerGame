@@ -236,7 +236,7 @@ class Player(RigidBody):
             dustpos.xy -= self.boxcam
             dustpos.x += 3
             dustpos.y -= 20
-            
+
             dustpos += glm.vec4(
                 (random.random() - 0.5) * rad, (random.random() - 0.5) * 6, 0, 0
             )
@@ -305,6 +305,8 @@ class Player(RigidBody):
         # Update the player's velocity with the scaled input
         self.velocity += input_velocity
 
+        just_pressed = self.app.event_manager.just_pressed
+
         if self.coyote_time < 0.1 and (
             keys[bindings["jump"]] or keys[bindings["jump_arrow"]]
         ):
@@ -314,8 +316,7 @@ class Player(RigidBody):
             self.jump_sound.play(fade_ms=50)
 
         elif self.coyote_time_wall < 0.1 and (
-            pg.key.get_just_pressed()[bindings["jump"]]
-            or pg.key.get_just_pressed()[bindings["jump_arrow"]]
+            bindings["jump"] in just_pressed or bindings["jump_arrow"] in just_pressed
         ):
             self.velocity.y = 150
             self.velocity.x = -170 if self.collision_types["left"] else 170

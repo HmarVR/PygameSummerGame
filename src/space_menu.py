@@ -111,18 +111,18 @@ class SpaceMenu:
     def update_surf(self):
         # self.ui_surf.fill((0,0,0,0))
         self.ui_surf.fill("black")
-        h = self.fuelbar.height
+        h = self.fuelbar.get_height()
         pos = (10, ((480 / 2) - (h / 2)))
 
         fuel_left = (
             self.app.share_data["fuel"] / self.app.share_data["fuel_max"]
         )  # normalized
-        fuel_height = fuel_left * self.fuelbar.height
-        rest = (1 - fuel_left) * self.fuelbar.height
+        fuel_height = fuel_left * self.fuelbar.get_height()
+        rest = (1 - fuel_left) * self.fuelbar.get_height()
         rect = pygame.Rect(
             pos[0],
             pos[1] + rest,
-            self.fuelbar.width,
+            self.fuelbar.get_width(),
             fuel_height,
         )
         pygame.draw.rect(self.ui_surf, "green", rect)
@@ -135,7 +135,7 @@ class SpaceMenu:
             self.spaceship_cache[round(self.spaceship_rot)] = surf
         r = pygame.Rect(0, 0, 640, 480)
         r.move_ip(
-            -surf.width // 2, -surf.height // 2
+            -surf.get_width() // 2, -surf.get_height() // 2
         )  # im not refactoring this, dont touch
         self.ui_surf.blit(surf, r.center)
         pygame.draw.circle(self.ui_surf, "red", pygame.Rect(0, 0, 640, 480).center, 1.0)
