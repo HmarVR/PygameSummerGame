@@ -47,6 +47,7 @@ BODIES = {
 class PlanetManager:
     def __init__(self, sun: "Sun", app: "Game") -> None:
         self.app = app
+        self.app.share_data["planet_manager"] = self
         self.sun = sun
         self.bodies = BODIES
         self.latest_planet = list(BODIES.keys())[0]

@@ -140,6 +140,7 @@ class Player(RigidBody):
     def __init__(self, app: "Game"):
         super().__init__()
         self.app = app
+        self.app.share_data["player"] = self
 
         self.jump_sound = pg.mixer.Sound("assets/sounds/jump.ogg")
         self.jump_sound.set_volume(0.5)
@@ -188,7 +189,12 @@ class Player(RigidBody):
         self.since_bounce = -1
         self.dust_clouds = []
         self.since_dust_cloud = -1
+        self.dust_cloud_max = 1.0
         self.since_falling = -1
+        self.fall_height = self.pos.y
+
+        self.dust_cam_pos = glm.vec3(self.app.camera.position)
+        # the cam pos that was when dust spawned
 
     def set_anim_scale(self):
         dt = self.app.delta_time
@@ -200,10 +206,10 @@ class Player(RigidBody):
             self.since_falling += dt
         if self.since_dust_cloud != -1:
             self.since_dust_cloud += dt
-            if self.since_dust_cloud > 1.0:
+            if self.since_dust_cloud > self.dust_cloud_max:
                 self.since_dust_cloud = -1
         else:
-            self.dust_clouds = [[-1000, -1000, 0, 0] for _ in range(4)]
+            self.dust_clouds = [glm.vec3(-1000, -1000, 0) for _ in range(4)]
 
         self.anim_scale = [1, 1]
 
@@ -222,13 +228,21 @@ class Player(RigidBody):
             self.anim_scale[1] = 1 - (v * 0.9)
 
     def spawn_dust(self):
+        self.dust_cam_pos = glm.vec3(self.app.camera.position)
         self.since_dust_cloud = 0
-        rad = 10
+        rad = 16
         for i in range(4):
-            p = self.pos
-            # dustpos = glm.vec4(p.x + (random.random() - 0.5) * rad, p.y + (random.random() - 0.5) * rad, 0, 0)
-            dustpos = glm.vec4(p.x, p.y, 0, 0)
-            self.dust_clouds[i] = dustpos
+            dustpos = self.m_view * glm.vec4(0, 0, 0, 1) + glm.vec4(320, 240, 0, 0)
+            dustpos.xy -= self.boxcam
+            dustpos.x += 3
+            dustpos.y -= 20
+            
+            dustpos += glm.vec4(
+                (random.random() - 0.5) * rad, (random.random() - 0.5) * 6, 0, 0
+            )
+            # glm.vec4(p.x, p.y, 0, 0)
+            self.dust_clouds[i] = dustpos.xyz
+        # print(self.m_view)
 
     def check(self, keys):
         # self.velocity[0] = 0
@@ -334,13 +348,23 @@ class Player(RigidBody):
 
         else:  # my boy prolly just chillin rn am I right (gotta capitalie the I am I right)
             self.animation_manager.set_animation(0)
-        
-        if self.since_falling > 0.1 and self.collision_types["bottom"]:  # fell down really hard
+
+        if self.pos.y > self.fall_height:
+            self.fall_height = self.pos.y
+
+        fall_dist = self.fall_height - self.pos.y
+        if (
+            fall_dist > 16 * 1
+            and self.since_falling > 0.1
+            and self.collision_types["bottom"]
+        ):  # fell down really hard
             self.spawn_dust()
             self.since_falling = -1
+            self.fall_height = self.pos.y
 
         if self.coyote_time < 0.1:  # on ground
             self.since_jump = -1
+            self.fall_height = self.pos.y
             # self.since_falling = -1
 
         self.set_anim_scale()
@@ -357,6 +381,8 @@ class Player(RigidBody):
 
         self.boxcam = glm.clamp(self.boxcam, glm.vec2(-30), glm.vec2(30))
         self.boxcam += self.pos.xy - glm.vec2(self.rect.x - 1, self.rect.y)
+        # the offset of the camera relative to the center of the screen
+        # basically the camera only starts to move to the player if the boxcam width/height is bigger than like 30px
 
         self.pos = glm.vec3(self.rect[0] - 1, self.rect[1], 0)
 
@@ -370,9 +396,11 @@ class Player(RigidBody):
         self.vao.uniform_bind("m_model", self.m_model.to_bytes())
         self.vao.uniform_bind("frame", struct.pack("i", self.frame))
         self.vao.uniform_bind("flip", struct.pack("?", self.flip))
+
+        self.m_view = self.app.camera.m_proj * self.app.camera.m_view * self.m_model
         self.vao.uniform_bind(
             "m_view",
-            (self.app.camera.m_proj * self.app.camera.m_view * self.m_model).to_bytes(),
+            self.m_view.to_bytes(),
         )
 
         self.app.share_data["post_process"].dust_clouds = self.dust_clouds

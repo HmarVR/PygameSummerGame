@@ -37,6 +37,8 @@ class SpaceMenu:
             (640, 480)
         ).convert_alpha()  # make rgba8unorm
         self.ui_surf.set_colorkey("black")
+        
+        self.init_map()
 
         self.font = pygame.Font("assets/fonts/renogare/Renogare-Regular.otf", 20)
 
@@ -60,6 +62,40 @@ class SpaceMenu:
         app.mesh.vao.vaos[self.vao_name] = self.vao
         # self.update_surf()
         self.send_tex()
+
+    def init_map(self):
+        self.map_area = pygame.Rect(0,0,1,1)
+        planet_manager = self.app.share_data["planet_manager"]
+        for body in planet_manager.bodies.values():
+            pos: pygame.Vector2 = body["bodyPos"]
+            rad = body["bodyRadius"]
+            rect = pygame.Rect(*pos, rad, rad)
+            self.map_area.union_ip(rect)
+        self.map_area.inflate_ip(1000, 1000)
+        print(self.map_area)
+
+    def draw_map(self):
+        screen_area = pygame.Rect(0,0, 100,100)
+        screen_area.topleft = [self.app.WIN_SIZE[0] - screen_area.w, self.app.WIN_SIZE[1] - screen_area.h]  # move to bottomleft
+        screen_area.move_ip(-10, -10)
+        pygame.draw.rect(self.ui_surf, "#0b132d", screen_area)
+        
+        planet_manager = self.app.share_data["planet_manager"]
+        for body in planet_manager.bodies.values():
+            pos:pygame.Vector2 = body["bodyPos"]
+            normalizedx = pos.x / self.map_area.w  # this doesnt take x into account but whatever
+            normalizedy = pos.y / self.map_area.h
+            normalizedy = 1.0 - normalizedy  # pygame & opengl orientation is diff vertically
+            screen_pos = (screen_area.x + normalizedx * screen_area.w, screen_area.y + normalizedy * screen_area.h)
+            pygame.draw.circle(self.ui_surf, body["uiColor"], screen_pos, 2.0)
+        
+        # draw player
+        pos:pygame.Vector2 = self.app.camera.position.xy
+        normalizedx = pos.x / self.map_area.w  # this doesnt take x into account but whatever
+        normalizedy = pos.y / self.map_area.h
+        normalizedy = 1.0 - normalizedy  # pygame & opengl orientation is diff vertically
+        screen_pos = (screen_area.x + normalizedx * screen_area.w, screen_area.y + normalizedy * screen_area.h)
+        pygame.draw.circle(self.ui_surf, "blue", screen_pos, 3.0)
 
     def send_tex(self):
         try:
@@ -103,6 +139,8 @@ class SpaceMenu:
         )  # im not refactoring this, dont touch
         self.ui_surf.blit(surf, r.center)
         pygame.draw.circle(self.ui_surf, "red", pygame.Rect(0, 0, 640, 480).center, 1.0)
+
+        self.draw_map()
 
     def update(self):
         keys = pygame.key.get_pressed()

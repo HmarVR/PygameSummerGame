@@ -8,6 +8,7 @@ import time
 class PlanetScene:
     def __init__(self, app):
         self.app = app
+        self.app.share_data["state"] = "planet"
         self.mesh = app.mesh
         self.ctx:mgl.Context = app.ctx
         self.opaque_objects = []

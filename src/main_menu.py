@@ -54,10 +54,15 @@ class MainMenu:
             fbo=self.app.mesh.vao.Framebuffers.framebuffers["default"],
             program=self.app.mesh.vao.program.programs["main_menu_ui"],
             vbo=self.app.mesh.vao.vbo.vbos["plane"],
-            umap={"u_plsdriver": "vec3", "time": "float"},  # some drivers want this
+            umap={
+                "u_plsdriver": "vec3",
+                "time": "float",
+                "screenResolution": "vec2",
+            },  # some drivers want this
             tmap=["T_ui"],
         )
         app.mesh.vao.vaos["main_menu"] = self.vao
+        self.vao.uniform_bind("screenResolution", struct.pack("ff", *(640, 480)))
         self.update_surf()
         self.send_tex()
 
@@ -153,7 +158,7 @@ class MainMenu:
                 start_pos[0] += surf.width + sep_width
 
     def update_surf(self):
-        self.ui_surf.fill(("black"))
+        self.ui_surf.fill(("#2E2C33"))
         for name, obj in self.buttons.items():
             rect: pygame.Rect = obj["rect"]
             if name == self.selected:
@@ -168,7 +173,7 @@ class MainMenu:
         self.letter_draw()
         r = self.pg_snake.get_rect()
         r.topleft = [self.app.WIN_SIZE[0] - r.width, self.app.WIN_SIZE[1] - r.height]
-        r.move_ip(-6, -6)
+        r.move_ip(-24, -24)
         self.ui_surf.blit(self.pg_snake, r.topleft)
 
     @state
