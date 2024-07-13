@@ -26,10 +26,13 @@ class SpaceShip:
 
         self.app.share_data["spaceship"] = self
         
-        self.fuel = 100
-        self.fuel_max = 100
+        planet_manager = self.app.share_data["space_planet"].planet_manager
+        self.fuel_usage = 0.1
+        self.fuel = planet_manager.fuel_to_planet("Platee")
+        self.fuel_max = 600
         
         self.app.share_data["fuel"] = self.fuel
+        self.app.share_data["fuel_usage"] = self.fuel_usage
         self.app.share_data["fuel_max"] = self.fuel_max
 
         self.vao = app.mesh.vao.get_vao(

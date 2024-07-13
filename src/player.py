@@ -142,8 +142,16 @@ class Player(RigidBody):
         self.app = app
         self.app.share_data["player"] = self
 
+        pg.mixer.music.load("assets/sounds/wan.ogg")
+        pg.mixer.music.set_volume(0.5)
+        pg.mixer.music.play(-1, fade_ms=500)
+
+
         self.jump_sound = pg.mixer.Sound("assets/sounds/jump.ogg")
         self.jump_sound.set_volume(0.5)
+        
+        self.fall_sound = pg.mixer.Sound("assets/sounds/fall.ogg")
+        self.fall_sound.set_volume(0.5)
 
         self.app.mesh.vao.add_vao(
             vao_name="player",
@@ -228,6 +236,7 @@ class Player(RigidBody):
             self.anim_scale[1] = 1 - (v * 0.9)
 
     def spawn_dust(self):
+        self.fall_sound.play()
         self.dust_cam_pos = glm.vec3(self.app.camera.position)
         self.since_dust_cloud = 0
         rad = 16
@@ -355,7 +364,7 @@ class Player(RigidBody):
 
         fall_dist = self.fall_height - self.pos.y
         if (
-            fall_dist > 16 * 1
+            fall_dist > 16 * 5
             and self.since_falling > 0.1
             and self.collision_types["bottom"]
         ):  # fell down really hard

@@ -38,6 +38,10 @@ class MainMenu:
         ).convert_alpha()  # make rgba8unorm
         self.button_width = 100
         self.button_height = 50
+        
+        pygame.mixer.music.load("assets/sounds/great_space_expedition.ogg")
+        pygame.mixer.music.set_volume(0.6)
+        pygame.mixer.music.play(-1, fade_ms=500)
 
         self.pg_snake = pygame.image.load_sized_svg(
             "assets/textures/pygame-ce.svg", (180, 90)

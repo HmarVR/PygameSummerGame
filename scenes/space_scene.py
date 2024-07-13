@@ -2,6 +2,8 @@ from src.loader import *
 from engine.fbo import Framebuffers
 import time
 
+from pygame import Vector2
+
 class SpaceScene:
     def __init__(self, app):
         self.app = app
@@ -22,7 +24,13 @@ class SpaceScene:
         self.tp_objects.append(obj)
 
     def load(self):
-        self.add_opaque_object(Sun(self.app))
+        self.sun = Sun(self.app)
+        self.add_opaque_object(self.sun)
+        
+        planet = self.sun.planet_manager.bodies["Platee"]
+        self.app.camera.position.x = planet["bodyPos"].x - 1000
+        self.app.camera.position.y = planet["bodyPos"].y + 1000
+        
         self.add_tp_object(SpaceMenu(self.app))
         self.add_tp_object(SpaceShip(self.app))
 

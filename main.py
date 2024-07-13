@@ -130,7 +130,7 @@ class Game:
 
     async def run(self):
         while True:
-            if WEB:
+            if WEB and self.elapsed_frames < 1000:
                 platform.window.canvas.style.width = "640px"
                 platform.window.canvas.style.height = "480px"
             self.elapsed_frames += 1

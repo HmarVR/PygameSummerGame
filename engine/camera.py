@@ -39,18 +39,28 @@ class Camera:
         if self.freemove:
             velocity = self.SPEED * self.app.delta_time
             keys = pg.key.get_pressed()
+            offset = glm.vec3()
             if keys[pg.K_q]:
-                self.position += self.forward * velocity
+                offset += self.forward
+                # self.position += self.forward * velocity
             if keys[pg.K_e]:
-                self.position -= self.forward * velocity
+                offset -= self.forward
+                # self.position -= self.forward * velocity
             if keys[pg.K_a]:
-                self.position -= self.right * velocity
+                offset -= self.right
+                # self.position -= self.right * velocity
             if keys[pg.K_d]:
-                self.position += self.right * velocity
+                offset += self.right
+                # self.position += self.right * velocity
             if keys[pg.K_w]:
-                self.position += self.up * velocity
+                offset += self.up
+                # self.position += self.up * velocity
             if keys[pg.K_s]:
-                self.position -= self.up * velocity
+                offset -= self.up
+                # self.position -= self.up * velocity
+            if glm.length(offset) > 0:
+                offset = glm.normalize(offset)
+            self.position += offset * velocity
 
     def get_view_matrix(self):
         return glm.lookAt(self.position, self.position + glm.vec3(0, 0, -1), self.up)

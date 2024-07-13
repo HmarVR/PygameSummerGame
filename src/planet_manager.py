@@ -13,26 +13,26 @@ if TYPE_CHECKING:
 # astral bodies
 BODIES = {
     "Orion": {  # star
-        "bodyRadius": 1000 / 4,
-        "cloudRadius": 1050 / 4,
+        "bodyRadius": 500,
+        "cloudRadius": 520,
         "bodyPos": Vector2(16410, 5917),
         "lightDirection": [0.3, 0.6, -1.0],
         "isStar": True,
         "uiColor": "yellow",
     },
     "Albasee": {
-        "bodyRadius": 500 / 4,  # pixels
-        "cloudRadius": 530 / 4,
+        "bodyRadius": 100,  # pixels
+        "cloudRadius": 130,
         "bodyPos": Vector2(11_300, 27_450),
         "lightDirection": [0.3, 0.6, -1.0],  # I'll mess with this later
-        "uiColor": "orange",
+        "uiColor": "red",
     },
     "Vulakit": {
         "bodyRadius": 200 / 4,
         "cloudRadius": 250 / 4,
         "bodyPos": Vector2(9_000, 7_750),
         "lightDirection": [0.3, 0.6, -1.0],  # I'll mess with this later
-        "uiColor": "yellow",
+        "uiColor": "purple",
     },
     "Platee": {
         "bodyRadius": 330 / 4,
@@ -56,7 +56,7 @@ class PlanetManager:
         self.load_planet_textures()
 
         self.get_closest_planet()
-        self.tp_planet()
+        # self.tp_planet()
 
         self.body_rad_mul = 1.0
 
@@ -285,6 +285,23 @@ cee3ef
             planet = BODIES[list(BODIES.keys())[self.planet_id]]
             self.app.camera.position.x = planet["bodyPos"].x - 320
             self.app.camera.position.y = planet["bodyPos"].y - 240
+
+    def fuel_to_planet(self, planet_name):
+        body = BODIES[planet_name]
+        pos:Vector2 = body["bodyPos"]
+        campos:Vector2 = Vector2(self.app.camera.position.xy)
+        dif = pos - campos
+        
+        distance = dif.length()
+        velocity = self.app.camera.SPEED * self.app.delta_time
+        coeff = self.app.share_data["spaceship"].fuel_usage
+        
+        fuel_usage = distance / velocity * coeff
+        fuel_usage += 20.0
+        fuel_usage *= 1.2
+        
+        print(distance, velocity, )
+        return fuel_usage
 
     def land_in_planet(self):
         cam_pos = Vector2(

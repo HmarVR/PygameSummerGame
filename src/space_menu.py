@@ -40,7 +40,15 @@ class SpaceMenu:
         
         self.init_map()
 
+        pygame.mixer.music.load("assets/sounds/silver_universe.ogg")
+        pygame.mixer.music.set_volume(0.6)
+        pygame.mixer.music.play(-1, fade_ms=500)
+
         self.font = pygame.Font("assets/fonts/renogare/Renogare-Regular.otf", 20)
+
+        self.pg_snake = pygame.image.load_sized_svg(
+            "assets/textures/pygame-ce.svg", (180, 90)
+        ).convert_alpha()
 
         self.fuelbar = pygame.image.load("assets/textures/fuelbar.png").convert_alpha()
         self.spaceship = pygame.image.load(
@@ -51,6 +59,8 @@ class SpaceMenu:
             for rot in range(0, 360 + 1)
         }
         self.spaceship_rot = 0
+        
+        self.since_no_fuel = -1
 
         self.vao = app.mesh.vao.get_vao(
             fbo=self.app.mesh.vao.Framebuffers.framebuffers["default"],
@@ -62,6 +72,21 @@ class SpaceMenu:
         app.mesh.vao.vaos[self.vao_name] = self.vao
         # self.update_surf()
         self.send_tex()
+
+    def no_stuck(self):
+        if self.since_no_fuel > 1:
+            r = self.pg_snake.get_rect()
+            r.center = pygame.Rect(0,0,*self.app.WIN_SIZE.xy).center
+            r.move_ip(0, -100)
+            print(r.topleft)
+            self.ui_surf.blit(self.pg_snake, r.topleft)
+            surf = self.font.render("The pygame-ce snake is\n helping you by giving you\n just enough fuel to reach your\n target!", True, "white")
+            r2 = surf.get_rect()
+            r2.center = pygame.Rect(0,0,*self.app.WIN_SIZE.xy).center
+            r2.move_ip(0, 80)
+            self.ui_surf.blit(surf, r2.topleft)
+        elif self.since_no_fuel > 10:
+            pass # calculate fuel and give it to the player
 
     def init_map(self):
         self.map_area = pygame.Rect(0,0,1,1)
@@ -141,8 +166,12 @@ class SpaceMenu:
         pygame.draw.circle(self.ui_surf, "red", pygame.Rect(0, 0, 640, 480).center, 1.0)
 
         self.draw_map()
+        
+        self.no_stuck()
 
     def update(self):
+        if self.since_no_fuel != -1:
+            self.since_no_fuel += self.app.delta_time
         keys = pygame.key.get_pressed()
         self.move(keys)
         self.render()
@@ -164,10 +193,13 @@ class SpaceMenu:
         else:
             v = pygame.Vector2(x, y)
             v = v.normalize()
-            self.app.share_data["spaceship"].fuel -= v.length() * 0.01
+            self.app.share_data["spaceship"].fuel -= v.length() * self.app.share_data["fuel_usage"]
             a_rad = math.atan2(y, x)
             a_deg = math.degrees(a_rad)
             end_angle = a_deg
+            if self.app.share_data["spaceship"].fuel <= 0:
+                self.app.camera.freemove = False
+                self.since_no_fuel = 0
 
         start_angle = self.spaceship_rot % 360
         end_angle = end_angle % 360
