@@ -28,7 +28,7 @@ class SpaceShip:
         
         planet_manager = self.app.share_data["space_planet"].planet_manager
         self.fuel_usage = 0.1
-        self.fuel = planet_manager.fuel_to_planet("Platee")
+        self.fuel = 600 # planet_manager.fuel_to_planet("Platee")
         self.fuel_max = 600
         
         self.app.share_data["fuel"] = self.fuel

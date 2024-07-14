@@ -74,7 +74,7 @@ class SpaceMenu:
         self.send_tex()
 
     def no_stuck(self):
-        if self.since_no_fuel > 1:
+        if self.since_no_fuel > 0.5:
             r = self.pg_snake.get_rect()
             r.center = pygame.Rect(0,0,*self.app.WIN_SIZE.xy).center
             r.move_ip(0, -100)
@@ -85,9 +85,10 @@ class SpaceMenu:
             r2.center = pygame.Rect(0,0,*self.app.WIN_SIZE.xy).center
             r2.move_ip(0, 80)
             self.ui_surf.blit(surf, r2.topleft)
-        elif self.since_no_fuel > 10:
+        elif self.since_no_fuel > 2:
             self.app.share_data["spaceship"].fuel = 1000
             self.app.share_data["spaceship"].fuel_max = 1000
+            self.app.camera.freemove = True
 
     def init_map(self):
         self.map_area = pygame.Rect(0,0,1,1)
@@ -194,7 +195,7 @@ class SpaceMenu:
         else:
             v = pygame.Vector2(x, y)
             v = v.normalize()
-            self.app.share_data["spaceship"].fuel -= v.length() * self.app.share_data["fuel_usage"]
+            # self.app.share_data["spaceship"].fuel -= v.length() * self.app.share_data["fuel_usage"]
             a_rad = math.atan2(y, x)
             a_deg = math.degrees(a_rad)
             end_angle = a_deg
