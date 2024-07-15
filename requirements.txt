@@ -1,0 +1,6 @@
+PyGLM
+webcolors
+zengl
+zengl-extras
+pygame-ce
+pillow
